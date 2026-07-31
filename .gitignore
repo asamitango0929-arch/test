@@ -1,6 +1,4 @@
-# ビルド成果物 / 依存関係
-.build/
+# 依存関係・ビルド一時ファイル
 node_modules/
 *.pdf
 slide-*.jpg
-qa.pptx

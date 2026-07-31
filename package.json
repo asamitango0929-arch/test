@@ -1,0 +1,7 @@
+{
+  "name": "part-time-hiring-project",
+  "private": true,
+  "description": "短時間勤務者採用プロジェクトの資料生成",
+  "scripts": { "build": "node scripts/build_pptx.js" },
+  "dependencies": { "pptxgenjs": "^3.12.0" }
+}

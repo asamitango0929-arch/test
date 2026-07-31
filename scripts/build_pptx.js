@@ -10,6 +10,7 @@ const BLUE    = "2E5A9C";
 const ICE     = "DCE7F5";
 const GOLD    = "E8A33D";
 const TEAL    = "1FA67A";
+const PLUM    = "6D5B9C";
 const WHITE   = "FFFFFF";
 const INK     = "1A2233";
 const MUTE    = "6B7A90";
@@ -126,15 +127,16 @@ s.addNotes("採用目標は成田空港10名、新千歳空港10名の合計20�
 
 // ================= Slide 4 : プロジェクト体制 =================
 s = p.addSlide(); bg(s, LIGHT);
-header(s, "TEAM  ─  プロジェクト体制", "4つの役割で推進体制を構築");
+header(s, "TEAM  ─  プロジェクト体制", "5つの役割で推進体制を構築");
 const team = [
   ["統括", "遠藤", "全体統括・経営報告", NAVY],
-  ["プロジェクトリーダー", "内山", "プロジェクト運営管理", BLUE],
+  ["PMリーダー", "内山", "プロジェクト運営管理", BLUE],
   ["実務担当", "野澤", "採用実務の中心", TEAL],
-  ["制度・労務担当", "髙田 部長", "制度設計・労務確認", GOLD],
+  ["制度・労務", "髙田 部長", "制度設計・労務確認", GOLD],
+  ["現場調整窓口", "坂本", "入社後フォロー・調整", PLUM],
 ];
-let tx = 0.7;
-const cw = 2.98, gap = 0.19;
+let tx = 0.51;
+const cw = 2.31, gap = 0.19;
 team.forEach((m,i)=>{
   s.addShape(p.ShapeType.roundRect, { x:tx, y:2.0, w:cw, h:4.35, rectRadius:0.08, fill:{color:CARD}, line:{color:LINE, width:1}, shadow:{type:"outer", color:"9AA7BC", opacity:0.35, blur:8, offset:2, angle:90} });
   // top color band via rounded rect header
@@ -150,7 +152,7 @@ team.forEach((m,i)=>{
   tx += cw + gap;
 });
 pageNum(s, 4);
-s.addNotes("統括：遠藤、プロジェクトリーダー：内山、実務担当：野澤、制度・労務担当：髙田部長。実務は野澤を中心に運営し、内山が運営を管理する。");
+s.addNotes("統括：遠藤、プロジェクトリーダー：内山、実務担当：野澤、制度・労務担当：髙田部長、現場調整窓口：坂本。坂本は入社〜入社後のフォローとトラブル対応・現場調整の窓口を担う。実務は野澤を中心に運営し、内山が運営を管理する。");
 
 // ================= Slide 5 : 募集媒体・掲載期間 =================
 s = p.addSlide(); bg(s, LIGHT);
@@ -200,21 +202,22 @@ const duties = [
   ["内山", "PMリーダー", BLUE, ["プロジェクト運営","現場との調整","面接対応","進捗管理"]],
   ["野澤", "実務担当", TEAL, ["ネオキャリアとの窓口・調整","求人媒体管理・原稿修正","応募者管理・面接日程調整","面接対応・採用進捗管理"]],
   ["髙田 部長", "制度・労務", GOLD, ["制度設計","労務確認","雇用条件確認","社会保険等の制度確認"]],
+  ["坂本", "現場調整窓口", PLUM, ["入社〜入社後のフォロー","現場調整の窓口対応","トラブル・相談対応","定着支援・早期離職の防止"]],
 ];
-let dx = 0.7;
-const dw = 2.98, dgap = 0.19;
+let dx = 0.51;
+const dw = 2.31, dgap = 0.19;
 duties.forEach(d=>{
   s.addShape(p.ShapeType.roundRect, { x:dx, y:1.95, w:dw, h:4.55, rectRadius:0.08, fill:{color:CARD}, line:{color:LINE, width:1}, shadow:{type:"outer", color:"9AA7BC", opacity:0.3, blur:7, offset:2, angle:90} });
   s.addShape(p.ShapeType.ellipse, { x:dx+0.28, y:2.2, w:0.5, h:0.5, fill:{color:d[2]}, line:{type:"none"} });
   s.addText(d[0], { x:dx+0.9, y:2.18, w:dw-1.0, h:0.35, fontFace:F, fontSize:16, bold:true, color:INK, margin:0 });
   s.addText(d[1], { x:dx+0.9, y:2.52, w:dw-1.0, h:0.28, fontFace:F, fontSize:11, bold:true, color:d[2], margin:0 });
   s.addShape(p.ShapeType.line, { x:dx+0.28, y:3.0, w:dw-0.56, h:0, line:{color:LINE, width:1} });
-  const items = d[3].map((t,i)=>({ text:t, options:{ bullet:{ code:"2022", indent:12 }, color:INK, breakLine:true, paraSpaceAfter:8 } }));
-  s.addText(items, { x:dx+0.28, y:3.15, w:dw-0.5, h:3.15, fontFace:F, fontSize:12, color:INK, lineSpacing:15, valign:"top", margin:0 });
+  const items = d[3].map((t,i)=>({ text:t, options:{ bullet:{ code:"2022", indent:11 }, color:INK, breakLine:true, paraSpaceAfter:7 } }));
+  s.addText(items, { x:dx+0.26, y:3.15, w:dw-0.46, h:3.2, fontFace:F, fontSize:11, color:INK, lineSpacing:14, valign:"top", margin:0 });
   dx += dw + dgap;
 });
 pageNum(s, 6);
-s.addNotes("遠藤は全体統括・経営報告。内山は運営・調整・進捗管理。野澤はネオキャリア窓口や媒体・応募者・面接の実務全般。髙田部長は制度設計・労務・雇用条件・社会保険の確認。");
+s.addNotes("遠藤は全体統括・経営報告。内山は運営・調整・進捗管理。野澤はネオキャリア窓口や媒体・応募者・面接の実務全般。髙田部長は制度設計・労務・雇用条件・社会保険の確認。坂本は入社〜入社後のフォロー、現場調整の窓口、トラブル・相談対応、定着支援を担う。");
 
 // ================= Slide 7 : 面接体制 =================
 s = p.addSlide(); bg(s, LIGHT);
