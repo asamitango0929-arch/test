@@ -213,11 +213,34 @@ def hdr(row, labels, start=2):
         c=dash.cell(row=row,column=start+i,value=lab)
         c.font=font(10,True,WHITE); c.fill=fill(GREY_H); c.alignment=CEN; c.border=BORDER
 
-# ---- Section 1: funnel target vs actual ----
-sec(4, "①  採用ファネル：目標 vs 実績（累計）")
-hdr(5, ["指標","目標","実績(累計)","達成率","前日","前日比"])
+# ---- Target-setting block (inputs): back-calc funnel targets from hire goal ----
+def _inp(r,c,val,fmt=None):
+    cell=dash.cell(row=r,column=c,value=val); cell.font=font(11,True,"0000FF")
+    cell.fill=fill(INPUT); cell.alignment=CEN; cell.border=BORDER
+    if fmt: cell.number_format=fmt
+    return cell
+def _lab(r,c,val,bold=True,sz=10):
+    cell=dash.cell(row=r,column=c,value=val); cell.font=font(sz,bold); cell.alignment=CEN; cell.border=BORDER
+    return cell
+sec(4, "◎  目標設定 ─ 黄色セルに入力（採用目標から各段階の目標を自動逆算）")
+# row5: hire goal (承諾) per base
+c=dash.cell(row=5,column=2,value="採用目標（承諾・人）"); c.font=font(11,True); c.alignment=LEF; c.border=BORDER
+_lab(5,3,"NRT(成田)"); _inp(5,4,10)
+_lab(5,5,"CTS(千歳)"); _inp(5,6,10)
+_lab(5,7,"合計")
+hc=dash.cell(row=5,column=8,value="=D5+F5"); hc.font=font(11,True); hc.fill=fill(BLUE_L); hc.alignment=CEN; hc.border=BORDER
+# row6/7: yield assumptions (応募→承諾)
+c=dash.cell(row=6,column=2,value="歩留まり前提"); c.font=font(10,True); c.alignment=LEF; c.border=BORDER
+for cc,tt in zip(range(3,8),["書類通過率","面接設定率","面接実施率","内定率","承諾率"]):
+    _lab(6,cc,tt)
+c=dash.cell(row=7,column=2,value="（応募→承諾）"); c.font=font(9,color=GREY_H); c.alignment=LEF; c.border=BORDER
+for cc,vv in zip(range(3,8),[0.5,0.7,0.85,0.6,0.8]):
+    _inp(7,cc,vv,"0%")
+
+# ---- Section 1: funnel target vs actual (targets back-calculated) ----
+sec(9, "①  採用ファネル：目標 vs 実績（累計）")
+hdr(10, ["指標","目標(逆算)","実績(累計)","達成率","前日","前日比"])
 funnel_rows=["応募数","書類通過","面接設定","面接実施","内定","承諾"]
-targets=[50,25,15,12,8,6]
 # live formulas per metric (col D = 実績)
 live=[
  f'=COUNTA({A}!$E$3:$E${DATA_END})',
@@ -228,14 +251,16 @@ live=[
  f'=COUNTIF({A}!$M$3:$M${DATA_END},"採用")+COUNTIF({A}!$M$3:$M${DATA_END},"入社予定")',
 ]
 dlcol=["B","C","D","E","F","G"]  # daily log cols for 前日 lookup: 応募数=B ...承諾=G
-F1=6
+# yield cells for back-calc: 書類通過率=C7,面接設定率=D7,面接実施率=E7,内定率=F7,承諾率=G7
+yieldref=["$C$7","$D$7","$E$7","$F$7","$G$7"]
+F1=11
 for i,name in enumerate(funnel_rows):
     r=F1+i
     dash.cell(row=r,column=2,value=name).font=font(11,True)
     dash.cell(row=r,column=2).alignment=LEF
-    # target (input, yellow)
-    tc=dash.cell(row=r,column=3,value=targets[i])
-    tc.font=font(11,color="0000FF"); tc.fill=fill(INPUT); tc.alignment=CEN
+    # target: 承諾(i=5)=合計目標; upstream = ROUNDUP(next_stage_target / stage_yield)
+    tfm="=$H$5" if i==5 else f"=ROUNDUP(C{r+1}/{yieldref[i]},0)"
+    tc=dash.cell(row=r,column=3,value=tfm); tc.font=font(11,True); tc.alignment=CEN
     # actual live
     ac=dash.cell(row=r,column=4,value=live[i]); ac.font=font(11,True); ac.alignment=CEN
     # achievement
@@ -250,8 +275,6 @@ for i,name in enumerate(funnel_rows):
     for c in range(2,8):
         cell=dash.cell(row=r,column=c); cell.border=BORDER
         if c in(4,6): cell.font=font(11)
-        if r%2==0 and cell.fill.fgColor.rgb in (None,"00000000"):
-            pass
 # conditional format: 達成率
 dash.conditional_formatting.add(f"E{F1}:E{F1+5}",
     CellIsRule(operator="greaterThanOrEqual",formula=["1"],fill=fill(GREEN_F),font=Font(name=JP,color=GREEN_T,bold=True)))
@@ -266,7 +289,7 @@ dash.conditional_formatting.add(f"G{F1}:G{F1+5}",
     CellIsRule(operator="lessThan",formula=["0"],fill=fill(RED_F),font=Font(name=JP,color=RED_T,bold=True)))
 
 # ---- Section 2: conversion rates ----
-CV=13
+CV=18
 sec(CV, "②  転換率（歩留まり）")
 hdr(CV+1, ["指標","値","計算式・定義"])
 conv=[
@@ -285,7 +308,7 @@ for i,(name,fm,note) in enumerate(conv):
     for c in range(2,8): dash.cell(row=r,column=c).border=BORDER
 
 # ---- Section 3: by media ----
-MB=20
+MB=26
 sec(MB, "③  媒体別 実績")
 hdr(MB+1, ["媒体","応募数","書類通過","面接設定","面接実施","内定","承諾"])
 media=master["媒体"]
@@ -338,12 +361,40 @@ for i,(code,label) in enumerate(bases):
         cc=dash.cell(row=r,column=3+j,value=fm); cc.alignment=CEN; cc.font=font(10)
     for c in range(2,9): dash.cell(row=r,column=c).border=BORDER
 
+# ---- Section 5: per-base hire goal achievement ----
+PT=BB+2+len(bases)+1
+sec(PT, "⑤  拠点別 採用目標 達成状況（承諾＝採用人数）")
+hdr(PT+1, ["拠点","採用目標","承諾実績","達成率"])
+pt_rows=[("NRT（成田）","$D$5",f"H{BB+2}"),("CTS（千歳）","$F$5",f"H{BB+3}")]
+for i,(lab,goal,act) in enumerate(pt_rows):
+    r=PT+2+i
+    dash.cell(row=r,column=2,value=lab).font=font(10,True); dash.cell(row=r,column=2).alignment=LEF
+    dash.cell(row=r,column=3,value=f"={goal}").alignment=CEN; dash.cell(row=r,column=3).font=font(10)
+    dash.cell(row=r,column=4,value=f"={act}").alignment=CEN; dash.cell(row=r,column=4).font=font(10)
+    rc=dash.cell(row=r,column=5,value=f'=IFERROR({act}/{goal},"")'); rc.number_format="0.0%"; rc.alignment=CEN
+    for c in range(2,6): dash.cell(row=r,column=c).border=BORDER
+# total row
+r=PT+2+len(pt_rows)
+dash.cell(row=r,column=2,value="合計").font=font(10,True,WHITE); dash.cell(row=r,column=2).fill=fill(BLUE); dash.cell(row=r,column=2).alignment=LEF
+dash.cell(row=r,column=3,value="=$H$5").font=font(10,True,WHITE); dash.cell(row=r,column=3).fill=fill(BLUE); dash.cell(row=r,column=3).alignment=CEN
+dash.cell(row=r,column=4,value=f"=H{BB+2}+H{BB+3}").font=font(10,True,WHITE); dash.cell(row=r,column=4).fill=fill(BLUE); dash.cell(row=r,column=4).alignment=CEN
+tc=dash.cell(row=r,column=5,value=f'=IFERROR((H{BB+2}+H{BB+3})/$H$5,"")'); tc.number_format="0.0%"; tc.font=font(10,True,WHITE); tc.fill=fill(BLUE); tc.alignment=CEN
+for c in range(2,6): dash.cell(row=r,column=c).border=BORDER
+# color-scale the achievement column
+dash.conditional_formatting.add(f"E{PT+2}:E{PT+2+len(pt_rows)}",
+    CellIsRule(operator="greaterThanOrEqual",formula=["1"],fill=fill(GREEN_F),font=Font(name=JP,color=GREEN_T,bold=True)))
+dash.conditional_formatting.add(f"E{PT+2}:E{PT+2+len(pt_rows)}",
+    CellIsRule(operator="between",formula=["0.7","0.9999"],fill=fill(AMBER_F),font=Font(name=JP,color=AMBER_T)))
+dash.conditional_formatting.add(f"E{PT+2}:E{PT+2+len(pt_rows)}",
+    CellIsRule(operator="lessThan",formula=["0.7"],fill=fill(RED_F),font=Font(name=JP,color=RED_T)))
+
 # ---- legend / notes ----
-LG=BB+5
+LG=PT+2+len(pt_rows)+2
 dash.merge_cells(f"B{LG}:H{LG}")
 dash.cell(row=LG,column=2,value="◆ 凡例・定義").font=font(10,True,BLUE)
 notes=[
- "・黄色セル＝入力（目標値）。運用開始時に目標を設定してください（現在は仮値）。",
+ "・黄色セル＝入力。採用目標（NRT/CTSの承諾人数）と歩留まり前提を入れると、各段階の目標を自動で逆算します。",
+ "・目標列＝承諾目標から逆算（承諾20名→内定25→面接実施42→面接設定50→書類通過72→応募144）。歩留まりを変えれば再計算されます。",
  "・実績は［応募者データ］シートから自動集計。担当者は毎日そこを更新するだけです。",
  "・前日／前日比は［日次レポート］の最終記録行との差分。毎日EODに1行追記してください。",
  "・面接設定＝面接ステータスが「面接調整中／面接日確定／面接実施済み」。面接実施＝「面接実施済み」。",
