@@ -360,22 +360,30 @@ for i,tx in enumerate(notes):
     r=LG+1+i; dash.merge_cells(f"B{r}:H{r}")
     dash.cell(row=r,column=2,value=tx).font=font(9,color=GREY_H); dash.cell(row=r,column=2).alignment=LEF
 
-# ---- charts ----
-ch1=BarChart(); ch1.type="bar"; ch1.title="採用ファネル（実績）"; ch1.height=7; ch1.width=12
+# ---- charts (axes explicitly shown; openpyxl hides them unless delete=False) ----
+def _axis(ch,xt,yt,xfmt=None):
+    ch.x_axis.delete=False; ch.y_axis.delete=False
+    ch.x_axis.title=xt; ch.y_axis.title=yt
+    ch.x_axis.tickLblPos="low"; ch.y_axis.majorGridlines=None
+    if xfmt: ch.x_axis.number_format=xfmt; ch.x_axis.numFmt=xfmt
+    ch.x_axis.txPr=None
+ch1=BarChart(); ch1.type="bar"; ch1.title="採用ファネル（実績・人）"; ch1.height=7; ch1.width=12
 ch1.add_data(Reference(dash,min_col=4,min_row=F1,max_row=F1+5)); ch1.set_categories(Reference(dash,min_col=2,min_row=F1,max_row=F1+5))
-ch1.legend=None; ch1.dataLabels=DataLabelList(); ch1.dataLabels.showVal=True; dash.add_chart(ch1,"J4")
-ch2=BarChart(); ch2.type="col"; ch2.title="媒体別 応募数"; ch2.height=7; ch2.width=12
+ch1.legend=None; ch1.dataLabels=DataLabelList(); ch1.dataLabels.showVal=True; _axis(ch1,"","人数"); dash.add_chart(ch1,"J4")
+ch2=BarChart(); ch2.type="col"; ch2.title="媒体別 応募数（人）"; ch2.height=7; ch2.width=12
 ch2.add_data(Reference(dash,min_col=3,min_row=MB+1,max_row=MB+1+len(media)),titles_from_data=True)
 ch2.set_categories(Reference(dash,min_col=2,min_row=MB+2,max_row=MB+1+len(media)))
-ch2.legend=None; ch2.dataLabels=DataLabelList(); ch2.dataLabels.showVal=True; dash.add_chart(ch2,"J20")
-ch3=LineChart(); ch3.title="推移（日次）"; ch3.height=7; ch3.width=12
-ch3.add_data(Reference(dl,min_col=2,max_col=7,min_row=3,max_row=DL_START+len(samples)+9),titles_from_data=True)
-ch3.set_categories(Reference(dl,min_col=1,min_row=DL_START,max_row=DL_START+len(samples)+9)); ch3.markers=True
-dash.add_chart(ch3,"J36")
-ch4=BarChart(); ch4.type="col"; ch4.title="年齢分布"; ch4.height=7; ch4.width=12
+ch2.legend=None; ch2.dataLabels=DataLabelList(); ch2.dataLabels.showVal=True; _axis(ch2,"媒体","人数"); dash.add_chart(ch2,"J20")
+# trend: X=日付, 6 series=各指標の累計。実データ行のみ参照（サンプル3行＋当面の入力余白）
+TREND_LAST=DL_START+len(samples)+6
+ch3=LineChart(); ch3.title="採用ファネル 日次推移（累計・人）"; ch3.height=8; ch3.width=13
+ch3.add_data(Reference(dl,min_col=2,max_col=7,min_row=3,max_row=TREND_LAST),titles_from_data=True)
+ch3.set_categories(Reference(dl,min_col=1,min_row=DL_START,max_row=TREND_LAST)); ch3.markers=True
+_axis(ch3,"日付","人数（累計）","m/d"); ch3.legend.position="b"; dash.add_chart(ch3,"J36")
+ch4=BarChart(); ch4.type="col"; ch4.title="年齢分布（人）"; ch4.height=7; ch4.width=12
 ch4.add_data(Reference(dash,min_col=3,min_row=AGE_top,max_row=AGE_top+len(age_items)))
 ch4.set_categories(Reference(dash,min_col=2,min_row=AGE_top+1,max_row=AGE_top+len(age_items)))
-ch4.legend=None; ch4.dataLabels=DataLabelList(); ch4.dataLabels.showVal=True; dash.add_chart(ch4,"J52")
+ch4.legend=None; ch4.dataLabels=DataLabelList(); ch4.dataLabels.showVal=True; _axis(ch4,"年齢層","人数"); dash.add_chart(ch4,"J52")
 dash.sheet_view.zoomScale=100; dash.sheet_properties.tabColor=NAVY
 
 # =====================================================================
