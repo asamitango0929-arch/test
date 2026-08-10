@@ -1,0 +1,257 @@
+<title>ヒトコム派遣 アクションボード</title>
+<style>
+  :root{
+    --bg:#F7F8FA; --surface:#FFFFFF; --surface-2:#FBFCFE;
+    --ink:#1B2230; --muted:#5A6472; --faint:#8B94A3;
+    --border:#E4E8EF; --border-strong:#D3D9E3;
+    --accent:#4C5FD5; --accent-soft:#EBEEFC;
+    --crit:#E5484D; --crit-soft:#FCECEC;
+    --warn:#D9820A; --warn-soft:#FBF0DD;
+    --info:#2F7DD1; --info-soft:#E7F0FB;
+    --idle:#7E8797; --idle-soft:#EEF0F3;
+    --good:#1F9D63;
+    --shadow:0 1px 2px rgba(20,28,45,.04),0 4px 16px rgba(20,28,45,.05);
+    --radius:14px;
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme:dark){
+      --bg:#0E1219; --surface:#161B24; --surface-2:#1B222D;
+      --ink:#E8ECF3; --muted:#A5AEBE; --faint:#727C8D;
+      --border:#262E3B; --border-strong:#333C4B;
+      --accent:#8291F0; --accent-soft:#20263B;
+      --crit:#F0777B; --crit-soft:#2E1D22;
+      --warn:#E6A54B; --warn-soft:#2C2418;
+      --info:#5FA1E0; --info-soft:#17222F;
+      --idle:#8B94A3; --idle-soft:#1E242E;
+      --good:#4FC088;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1219; --surface:#161B24; --surface-2:#1B222D;
+    --ink:#E8ECF3; --muted:#A5AEBE; --faint:#727C8D;
+    --border:#262E3B; --border-strong:#333C4B;
+    --accent:#8291F0; --accent-soft:#20263B;
+    --crit:#F0777B; --crit-soft:#2E1D22;
+    --warn:#E6A54B; --warn-soft:#2C2418;
+    --info:#5FA1E0; --info-soft:#17222F;
+    --idle:#8B94A3; --idle-soft:#1E242E;
+    --good:#4FC088;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;
+    line-height:1.6;font-size:15px;
+    padding:clamp(16px,4vw,44px) clamp(14px,4vw,24px);
+  }
+  .wrap{max-width:940px;margin:0 auto}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+
+  /* Header */
+  header.top{margin-bottom:26px}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 8px}
+  h1{font-size:clamp(24px,4.4vw,34px);line-height:1.2;margin:0;font-weight:800;letter-spacing:-.01em;text-wrap:balance}
+  .sub{color:var(--muted);margin:10px 0 0;font-size:14.5px;max-width:64ch}
+
+  /* Progress panel */
+  .panel{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:20px 22px;margin:22px 0 30px;
+  }
+  .prog-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .prog-head .count{font-size:14px;color:var(--muted)}
+  .prog-head .count b{color:var(--ink);font-size:26px;font-weight:800;margin-right:2px}
+  .bar{height:9px;border-radius:99px;background:var(--idle-soft);overflow:hidden}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--good));border-radius:99px;transition:width .45s cubic-bezier(.4,0,.2,1)}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--muted);
+    background:var(--surface-2);border:1px solid var(--border);border-radius:99px;padding:5px 11px}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .d-crit{background:var(--crit)} .d-warn{background:var(--warn)} .d-info{background:var(--info)} .d-idle{background:var(--idle)}
+
+  /* Section */
+  .section{margin:0 0 22px}
+  .sec-head{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding-left:2px}
+  .sec-head .tag{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:6px}
+  .sec-head h2{font-size:16px;margin:0;font-weight:700;letter-spacing:-.005em}
+  .sec-head .due{margin-left:auto;font-size:12.5px;color:var(--faint);font-weight:600}
+  .t-crit{color:var(--crit);background:var(--crit-soft)}
+  .t-warn{color:var(--warn);background:var(--warn-soft)}
+  .t-info{color:var(--info);background:var(--info-soft)}
+  .t-idle{color:var(--idle);background:var(--idle-soft)}
+
+  .cards{display:flex;flex-direction:column;gap:10px}
+  .card{
+    position:relative;display:grid;grid-template-columns:auto auto 1fr auto;align-items:start;gap:14px;
+    background:var(--surface);border:1px solid var(--border);border-radius:12px;
+    padding:15px 16px 15px 18px;box-shadow:var(--shadow);
+    transition:border-color .15s,transform .15s,opacity .2s;
+  }
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:12px 0 0 12px;background:var(--stripe,var(--idle))}
+  .card.crit{--stripe:var(--crit)} .card.warn{--stripe:var(--warn)} .card.info{--stripe:var(--info)} .card.idle{--stripe:var(--idle)}
+  .card:hover{border-color:var(--border-strong)}
+
+  .num{font-size:12.5px;font-weight:700;color:var(--faint);padding-top:3px;min-width:22px}
+
+  /* checkbox */
+  .check{appearance:none;width:21px;height:21px;border:2px solid var(--border-strong);border-radius:6px;
+    background:var(--surface-2);cursor:pointer;margin:1px 0 0;flex:none;position:relative;transition:.15s;display:grid;place-items:center}
+  .check:hover{border-color:var(--accent)}
+  .check:checked{background:var(--good);border-color:var(--good)}
+  .check:checked::after{content:"";width:5px;height:10px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(42deg) translateY(-1px)}
+  .check:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .body{min-width:0}
+  .act{font-size:14.5px;line-height:1.5;color:var(--ink);font-weight:600}
+  .act .detail{font-weight:400;color:var(--muted)}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .who{font-size:11.5px;font-weight:600;color:var(--muted);background:var(--surface-2);
+    border:1px solid var(--border);border-radius:6px;padding:2px 8px}
+  .who.lead{color:var(--accent);border-color:var(--accent-soft);background:var(--accent-soft)}
+  .when{align-self:start;font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap;padding-top:3px}
+
+  .card.done{opacity:.58}
+  .card.done .act{text-decoration:line-through;text-decoration-color:var(--faint);text-decoration-thickness:1.5px}
+
+  /* Owner summary */
+  .owners{margin-top:34px}
+  .owners h2{font-size:16px;margin:0 0 14px;font-weight:700}
+  .ogrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .ocard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 16px;box-shadow:var(--shadow)}
+  .ocard .name{font-weight:800;font-size:14.5px;margin-bottom:9px;display:flex;align-items:center;gap:8px}
+  .ocard .name .n{font-size:12px;font-weight:700;color:#fff;background:var(--accent);border-radius:99px;min-width:22px;height:22px;display:inline-grid;place-items:center;padding:0 6px}
+  .ocard ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+  .ocard li{font-size:13px;color:var(--muted);display:flex;gap:8px}
+  .ocard li .k{color:var(--faint);font-weight:700;flex:none}
+
+  .note{margin-top:30px;font-size:12.5px;color:var(--faint);border-top:1px solid var(--border);padding-top:16px;line-height:1.7}
+  .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 0;font-size:13px;color:var(--muted)}
+  .flow b{color:var(--ink)} .flow .arw{color:var(--accent);font-weight:700}
+
+  @media (max-width:560px){
+    .card{grid-template-columns:auto auto 1fr;row-gap:8px}
+    .when{grid-column:2 / -1;padding-top:0}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">ヒトコム派遣 &middot; 労務引継ぎ</p>
+    <h1>TODO アクションボード</h1>
+    <p class="sub">公募・人選フェーズ完了に伴う未決事項を、優先度別に「誰が・いつまでに・何をするか」で整理。チェックで進捗が更新されます。</p>
+  </header>
+
+  <section class="panel" aria-label="進捗サマリー">
+    <div class="prog-head">
+      <div class="count"><b id="doneN">0</b><span class="mono">/ 17</span> 完了</div>
+      <div class="count mono" id="pct">0%</div>
+    </div>
+    <div class="bar"><i id="fill"></i></div>
+    <div class="legend">
+      <span class="chip"><span class="dot d-crit"></span>最優先 3</span>
+      <span class="chip"><span class="dot d-warn"></span>開始前 9</span>
+      <span class="chip"><span class="dot d-info"></span>初回給与・請求前 4</span>
+      <span class="chip"><span class="dot d-idle"></span>随時 1</span>
+    </div>
+  </section>
+
+  <main id="board"></main>
+
+  <section class="owners">
+    <h2>担当別サマリー</h2>
+    <div class="ogrid" id="owners"></div>
+  </section>
+
+  <div class="note">
+    <div class="flow"><b>進め方</b><span class="arw">→</span>①最優先(1–3)<span class="arw">→</span>②開始前(4–12)<span class="arw">→</span>③初回給与・請求前(13–16)</div>
+    <p style="margin:10px 0 0">#1「出張扱いYES/NO」が後続のほぼ全項目に連動するため、最初に固めるのが効率的です。本ボードはたたき台であり、36協定・旅費規程・職務権限規程・就業規則に関わる最終判断は各規程および経理・関係者への確認のうえ確定してください。</p>
+  </div>
+</div>
+
+<script>
+const SECTIONS=[
+  {key:"crit",tag:"最優先",label:"8/27より前に決定",due:"期限 8/27前",items:[
+    {n:1,lead:"髙田部長",who:[],act:"出張扱いにするか（YES/NO）を決定する",detail:"8/27の取扱いはこの決定に従う。"},
+    {n:2,lead:"髙田部長",who:[],act:"（出張の場合）出張命令者を確定する",detail:"命令単位（期間一括／勤務日単位）も決める。"},
+    {n:3,lead:"髙田部長",who:["経理"],act:"出張日当・交通費とヒトコム3,000円/日の関係を整理する",detail:"重複・相殺・実費超過時の負担。"},
+  ]},
+  {key:"warn",tag:"開始前",label:"派遣開始前に決定",due:"期限 開始前",items:[
+    {n:4,lead:"髙田部長",who:["経理"],act:"3,000円/日の性質を確定する",detail:"本人への日当か／FMGへの派遣料金・経費補填か。"},
+    {n:5,lead:"髙田部長",who:["根本"],act:"時間外の判定基準を決める",detail:"FMG所定とヒトコム所定の関係・36協定・残業承認方法。"},
+    {n:6,lead:"髙田部長",who:["根本"],act:"休日勤務の取扱いを決める",detail:"FMG休日に勤務した場合の振休／代休／割増。"},
+    {n:7,lead:"根本",who:[],act:"FMG勤怠への登録・実績反映の方法を決める",detail:"「派遣勤務」区分で登録。"},
+    {n:8,lead:"根本",who:[],act:"日々の勤怠管理フローを決める",detail:"ヒトコム打刻→受領頻度→FMG反映→確認/承認者。"},
+    {n:9,lead:"根本",who:[],act:"欠勤・遅刻・早退・年休の連絡／申請フローを決める",detail:"ヒトコム・FMG双方。"},
+    {n:10,lead:"根本",who:["ヒトコム"],act:"指揮命令系統を明確化する",detail:"派遣先責任者・残業指示権者・FMG承認フロー。"},
+    {n:11,lead:"髙田部長",who:["根本"],act:"契約・社内手続き・就業条件明示の完了を最終確認する",detail:""},
+    {n:12,lead:"髙田部長",who:["根本"],act:"（出張としない場合）派遣勤務として就業場所・勤怠区分・勤務命令者・交通費を規定に落とす",detail:""},
+  ]},
+  {key:"info",tag:"初回前",label:"初回給与／初回請求の前に決定",due:"期限 初回給与・請求前",items:[
+    {n:13,lead:"根本",who:["経理"],act:"給与担当へ「控除しない」運用を共有し、誤った欠勤控除が発生しない仕組みを確認する",detail:""},
+    {n:14,lead:"根本",who:[],act:"残業・休日労働の実績管理方法を決める",detail:"ヒトコムから実労働時間を受領→FMGで判定。"},
+    {n:15,lead:"髙田部長",who:["経理"],act:"ヒトコムへの請求方法を決める",detail:"請求単位＝時間/日/月・残業/休日/3,000円/交通費の扱い。"},
+    {n:16,lead:"根本",who:["経理"],act:"勤怠実績と請求の突合フローを決める",detail:"実績確認者→請求作成者→承認者。"},
+  ]},
+  {key:"idle",tag:"随時",label:"随時",due:"期限 即時",items:[
+    {n:17,lead:"髙田部長",who:["根本"],act:"連絡ルートを関係者へ周知し窓口を一本化する",detail:"制度=髙田部長／勤怠=根本／費用=経理。"},
+  ]},
+];
+const OWNERS=[
+  {name:"髙田部長",nums:[1,2,3,4,5,6,11,12,15]},
+  {name:"根本さん",nums:[5,6,7,8,9,10,13,14,16]},
+  {name:"経理",nums:[3,4,13,15,16]},
+  {name:"遠藤",nums:[],note:"公募・人選の経緯フォロー（随時）"},
+];
+const LABELS={1:"出張YES/NO",2:"出張命令者",3:"日当と3,000円",4:"3,000円の性質",5:"時間外基準",6:"休日勤務",7:"勤怠登録",8:"勤怠フロー",9:"連絡申請",10:"指揮命令",11:"手続確認",12:"派遣勤務規定",13:"給与運用",14:"実績管理",15:"請求方法",16:"突合",17:"窓口一本化"};
+
+const board=document.getElementById("board");
+const KEY="hitocom_todo_v1";
+let state={};try{state=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+
+SECTIONS.forEach(sec=>{
+  const s=document.createElement("section");s.className="section";
+  s.innerHTML=`<div class="sec-head"><span class="tag t-${sec.key}">${sec.tag}</span><h2>${sec.label}</h2><span class="due">${sec.due}</span></div>`;
+  const cards=document.createElement("div");cards.className="cards";
+  sec.items.forEach(it=>{
+    const c=document.createElement("div");c.className=`card ${sec.key}`;c.dataset.n=it.n;
+    const whos=[`<span class="who lead">${it.lead}</span>`].concat((it.who||[]).map(w=>`<span class="who">${w}</span>`)).join("");
+    c.innerHTML=`
+      <input type="checkbox" class="check" aria-label="#${it.n} 完了">
+      <span class="num mono">#${it.n}</span>
+      <div class="body">
+        <div class="act">${it.act}${it.detail?` <span class="detail">${it.detail}</span>`:""}</div>
+        <div class="meta">${whos}</div>
+      </div>
+      <span class="when mono">${sec.due.replace("期限 ","")}</span>`;
+    const cb=c.querySelector(".check");
+    cb.checked=!!state[it.n];if(cb.checked)c.classList.add("done");
+    cb.addEventListener("change",()=>{state[it.n]=cb.checked;c.classList.toggle("done",cb.checked);save();update()});
+    cards.appendChild(c);
+  });
+  s.appendChild(cards);board.appendChild(s);
+});
+
+const ow=document.getElementById("owners");
+OWNERS.forEach(o=>{
+  const d=document.createElement("div");d.className="ocard";
+  const items=o.nums.length?o.nums.map(n=>`<li><span class="k mono">#${n}</span><span>${LABELS[n]}</span></li>`).join("")
+    :`<li><span>${o.note||""}</span></li>`;
+  d.innerHTML=`<div class="name"><span class="n mono">${o.nums.length||"–"}</span>${o.name}</div><ul>${items}</ul>`;
+  ow.appendChild(d);
+});
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function update(){
+  const done=Object.values(state).filter(Boolean).length;
+  const pct=Math.round(done/17*100);
+  document.getElementById("doneN").textContent=done;
+  document.getElementById("pct").textContent=pct+"%";
+  document.getElementById("fill").style.width=pct+"%";
+}
+update();
+</script>
