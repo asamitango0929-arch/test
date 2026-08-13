@@ -3,6 +3,11 @@ package.json
 package-lock.json
 *.pdf
 page-*.jpg
+full.png
+render.js
+shot.js
 loprofile/
+lp/
+lp2/
 .cache/
 .config/
