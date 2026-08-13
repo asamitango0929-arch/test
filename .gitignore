@@ -1,0 +1,8 @@
+node_modules/
+package.json
+package-lock.json
+*.pdf
+page-*.jpg
+loprofile/
+.cache/
+.config/
