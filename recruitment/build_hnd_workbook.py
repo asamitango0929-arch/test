@@ -574,11 +574,242 @@ g.sheet_properties.pageSetUpPr.fitToPage = True
 g.print_options.horizontalCentered = True
 g.page_margins.left = g.page_margins.right = 0.4
 
+
+# ============================================================
+# シート0：A4一枚（稟議添付用・1ページ完結）
+# ============================================================
+one = wb.create_sheet("A4一枚")
+one.sheet_view.showGridLines = False
+one.column_dimensions["A"].width = 1.2
+one.column_dimensions["B"].width = 28
+for i in range(3, 15):                                   # C..N = 12ヶ月
+    one.column_dimensions[get_column_letter(i)].width = 7.6
+one.column_dimensions["O"].width = 14                    # 年間計
+one.column_dimensions["P"].width = 1.2
+
+LAST = 15                                                # O列
+def span(r, c1=2, c2=LAST):
+    one.merge_cells(start_row=r, start_column=c1, end_row=r, end_column=c2)
+    return one.cell(row=r, column=c1)
+
+def band(r, text, h=16):
+    c = span(r)
+    c.value = text
+    c.font = F(10, True, NAVY)
+    c.alignment = LEFTI
+    for col in range(2, LAST + 1):
+        one.cell(row=r, column=col).fill = fill(BAND)
+    one.row_dimensions[r].height = h
+
+# --- 見出し ---
+t = span(1); t.value = "HND MMチーム　人員体制の現状と採用課題"
+t.font = F(14, True, NAVY); t.alignment = Alignment(horizontal="left", vertical="center")
+one.row_dimensions[1].height = 24
+
+st = span(2)
+st.value = "対象期間：2025年9月〜2026年8月（12ヶ月実績）　／　採用媒体の活用に関する稟議　添付資料　／　単位：名"
+st.font = F(8.5, False, GRAY); st.alignment = Alignment(horizontal="left", vertical="center")
+one.row_dimensions[2].height = 13
+
+for col in range(2, LAST + 1):
+    one.cell(row=3, column=col).border = Border(bottom=Side(style="medium", color=NAVY))
+one.row_dimensions[3].height = 4
+
+# --- KPIストリップ（5枠） ---
+TILES = [
+    (2, 3,  "年間退職者数",   f"={D}N16+{D}N17",                              NUM,  "正社員17名・派遣2名",     RED),
+    (4, 6,  "年間離職率",     f"=({D}N16+{D}N17)/AVERAGE({D}B8:M8)",          PCT,  "退職者数 ÷ 平均月初稼働数", RED),
+    (7, 9,  "月平均退職者数", f"=({D}N16+{D}N17)/12",                         MEI,  "12ヶ月中11ヶ月で退職が発生", RED),
+    (10, 12, "年間の純増減",  f"={D}N14-{D}N20",                              PLUS, "採用23名 − 離脱23名",     NAVY),
+    (13, 15, "期末の過不足",  f"={D}M23",                                     PLUS, "2026年8月末　必要数25名",  RED),
+]
+for c1, c2, title, formula, fmt, note, accent in TILES:
+    one.merge_cells(start_row=4, start_column=c1, end_row=4, end_column=c2)
+    h = one.cell(row=4, column=c1, value=title)
+    h.font = F(8.5, True, "FFFFFF"); h.alignment = CENTER
+
+    one.merge_cells(start_row=5, start_column=c1, end_row=5, end_column=c2)
+    v = one.cell(row=5, column=c1, value=formula)
+    v.number_format = fmt
+    v.font = Font(name=JP, size=18, bold=True, color=accent); v.alignment = CENTER
+
+    one.merge_cells(start_row=6, start_column=c1, end_row=6, end_column=c2)
+    n = one.cell(row=6, column=c1, value=note)
+    n.font = F(7.5, False, GRAY); n.alignment = CENTER
+
+    for col in range(c1, c2 + 1):
+        one.cell(row=4, column=col).fill = fill(accent)
+        for r in (5, 6):
+            one.cell(row=r, column=col).fill = fill(LABEL)
+        for r in (4, 5, 6):
+            one.cell(row=r, column=col).border = Border(
+                left=(med if col == c1 else None), right=(med if col == c2 else None),
+                top=(med if r == 4 else None), bottom=(med if r == 6 else None))
+one.row_dimensions[4].height = 15
+one.row_dimensions[5].height = 23
+one.row_dimensions[6].height = 13
+one.row_dimensions[7].height = 5
+
+# --- 月次推移表 ---
+band(8, "月次推移（2025年9月〜2026年8月）")
+
+one.merge_cells("B9:B10"); one.cell(row=9, column=2, value="項　目")
+one.merge_cells("C9:G9");  one.cell(row=9, column=3, value="2025年")
+one.merge_cells("H9:N9");  one.cell(row=9, column=8, value="2026年")
+one.merge_cells("O9:O10"); one.cell(row=9, column=15, value="年間計")
+for i, m in enumerate(MONTHS):
+    one.cell(row=10, column=3 + i, value=m)
+for r in (9, 10):
+    one.row_dimensions[r].height = 14
+    for col in range(2, LAST + 1):
+        c = one.cell(row=r, column=col)
+        c.font = F(9, True, "FFFFFF")
+        c.fill = fill(NAVY if r == 9 else NAVY_L)
+        c.alignment = CENTER
+        c.border = Border(left=thin, right=thin,
+                          top=(med if r == 9 else None),
+                          bottom=(med if r == 10 else None))
+
+# (ラベル, 参照行, 書式, 強調)　※異動（入）（出）は期間中0名のため1枚版では省略
+BODY = [
+    ("必要数 (a)",              7,  NUM,  False),
+    ("月初稼働数 (b)",          8,  NUM,  False),
+    ("採用数（正社員）",        11, NUM,  False),
+    ("採用数（派遣）",          12, NUM,  False),
+    ("入 合計",                 14, NUM,  True),
+    ("退職数（正社員）",        16, NUM,  False),
+    ("退職数（派遣）",          17, NUM,  False),
+    ("長期欠勤等による離脱者数", 18, NUM,  False),
+    ("出 合計",                 20, NUM,  True),
+    ("月末稼働数 (c)",          22, NUM,  True),
+    ("過不足 (c − a)",          23, PLUS, True),
+]
+NO_TOTAL = {7, 8, 22, 23}
+top = 11
+for j, (label, src, fmt, bold) in enumerate(BODY):
+    r = top + j
+    last = j == len(BODY) - 1
+    lab = one.cell(row=r, column=2, value=label)
+    lab.font = F(9, bold); lab.alignment = LEFTI
+    lab.fill = fill(TOTAL if bold else LABEL)
+    lab.border = Border(left=med, right=thin, top=thin, bottom=(med if last else thin))
+    for i, mcol in enumerate(COLS):
+        c = one.cell(row=r, column=3 + i, value=f"={D}{mcol}{src}")
+        c.number_format = fmt
+        c.font = F(9, bold); c.alignment = CENTER
+        if bold:
+            c.fill = fill(TOTAL)
+        c.border = Border(left=thin, right=thin, top=thin, bottom=(med if last else thin))
+    n = one.cell(row=r, column=15)
+    if src in NO_TOTAL:
+        n.value = "—"; n.font = F(9, False, GRAY)
+    else:
+        n.value = f"={D}N{src}"; n.number_format = fmt; n.font = F(9, True, NAVY)
+    n.alignment = CENTER
+    n.fill = fill(TOTAL)
+    n.border = Border(left=thin, right=med, top=thin, bottom=(med if last else thin))
+    one.row_dimensions[r].height = 14
+
+for r in (top, top + 1):                                  # 必要数・月初稼働数の網掛けを揃える
+    pass
+for r in (top + len(BODY) - 2, top + len(BODY) - 1):      # 月末稼働数・過不足のマイナス強調
+    one.conditional_formatting.add(
+        f"C{r}:O{r}",
+        CellIsRule(operator="lessThan", formula=["0"],
+                   fill=fill(REDFILL), font=Font(name=JP, size=9, bold=True, color=RED)))
+
+tbl_end = top + len(BODY) - 1
+one.row_dimensions[tbl_end + 1].height = 5
+
+# --- グラフ ---
+gr_band = tbl_end + 2
+band(gr_band, "必要数と稼働数の推移")
+mini = LineChart()
+mini.style = 2
+mini.height = 3.9
+mini.width = 24.6
+mini.y_axis.scaling.min = 0
+mini.y_axis.majorGridlines = None
+for row in (7, 22):
+    mini.add_data(Reference(ws, min_col=1, max_col=13, min_row=row, max_row=row),
+                  titles_from_data=True, from_rows=True)
+mini.set_categories(Reference(ws, min_col=2, max_col=13, min_row=5, max_row=5))
+mini.series[0].graphicalProperties.line.solidFill = "C00000"
+mini.series[0].graphicalProperties.line.width = 18000
+mini.series[0].graphicalProperties.line.dashStyle = "dash"
+mini.series[1].graphicalProperties.line.solidFill = "1F3864"
+mini.series[1].graphicalProperties.line.width = 24000
+mini.series[1].smooth = False
+mini.legend.position = "b"
+one.add_chart(mini, f"B{gr_band+1}")
+for r in range(gr_band + 1, gr_band + 9):
+    one.row_dimensions[r].height = 14
+chart_end = gr_band + 8
+one.row_dimensions[chart_end + 1].height = 5
+
+# --- 課題と必要採用数 ---
+ib = chart_end + 2
+band(ib, "現状の課題")
+POINTS = [
+    "1.　12ヶ月で19名（正社員17名・派遣2名）が退職。年間離職率76.8%、月平均1.6名のペースで欠員が発生している。",
+    "2.　年間23名を採用したが、同期間に23名（退職19名＋長期欠勤等による離脱4名）が離脱し、純増はゼロ。採用は欠員補充に費やされている。",
+    "3.　必要数が20名→25名へ増える一方、稼働数は期首・期末とも20名で横ばい。2026年8月末は稼働率80%（20名／25名）、▲5名の欠員となっている。",
+]
+for k, p in enumerate(POINTS):
+    r = ib + 1 + k
+    c = span(r)
+    c.value = p
+    c.font = F(9, False, "1F1F1F")
+    c.alignment = LEFTI
+    one.row_dimensions[r].height = 13
+
+# 結論行
+cr = ib + 1 + len(POINTS)
+one.merge_cells(start_row=cr, start_column=2, end_row=cr, end_column=9)
+cl = one.cell(row=cr, column=2)
+cl.value = "今後1年間に必要となる採用数　＝　現時点の欠員 5名　＋　想定退職者数 19名"
+cl.font = F(10, True, NAVY); cl.alignment = LEFTI
+one.merge_cells(start_row=cr, start_column=10, end_row=cr, end_column=LAST)
+cv = one.cell(row=cr, column=10)
+cv.value = f"=-{D}M23+{D}N16+{D}N17"
+cv.number_format = '#,##0"名 ／ 年"'
+cv.font = Font(name=JP, size=13, bold=True, color=RED)
+cv.alignment = Alignment(horizontal="center", vertical="center")
+for col in range(2, LAST + 1):
+    one.cell(row=cr, column=col).fill = fill(TOTAL)
+    one.cell(row=cr, column=col).border = Border(
+        left=(med if col == 2 else None), right=(med if col == LAST else None),
+        top=med, bottom=med)
+one.row_dimensions[cr].height = 22
+
+nt = cr + 1
+c = span(nt)
+c.value = ("※ 想定退職者数は直近12ヶ月の実績（19名）と同水準で推移すると仮定した試算値。"
+           "異動（入）（出）は期間中いずれも0名のため本表では省略。明細は「月次推移」シート参照。")
+c.font = F(7.5, False, GRAY); c.alignment = LEFTI
+one.row_dimensions[nt].height = 11
+
+# --- A4横1ページに収める ---
+one.page_setup.orientation = "landscape"
+one.page_setup.paperSize = one.PAPERSIZE_A4
+one.page_setup.fitToWidth = 1
+one.page_setup.fitToHeight = 1
+one.sheet_properties.pageSetUpPr.fitToPage = True
+one.print_options.horizontalCentered = True
+one.page_margins.left = one.page_margins.right = 0.35
+one.page_margins.top = one.page_margins.bottom = 0.35
+one.page_margins.header = one.page_margins.footer = 0.1
+one.print_area = f"A1:P{nt}"
+one.sheet_properties.tabColor = NAVY
+
+wb.move_sheet("A4一枚", offset=-(len(wb.sheetnames) - 1))
+
 wb.calculation.fullCalcOnLoad = True
 s.sheet_properties.tabColor = NAVY
 ws.sheet_properties.tabColor = NAVY_L
 g.sheet_properties.tabColor = NAVY_L
-s.sheet_view.tabSelected = True
+one.sheet_view.tabSelected = True
+s.sheet_view.tabSelected = False
 ws.sheet_view.tabSelected = False
 g.sheet_view.tabSelected = False
 wb.active = 0
