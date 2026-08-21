@@ -5,6 +5,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.formatting.rule import CellIsRule
 from openpyxl.chart import LineChart, BarChart, Reference
+from openpyxl.chart.label import DataLabelList
 from openpyxl.comments import Comment
 
 OUT = "/tmp/claude-0/-home-user-test/159a94d1-fe56-5981-a3d6-2b440c9c3e90/scratchpad/HND_人員推移_稟議添付資料.xlsx"
@@ -36,8 +37,8 @@ LEFTI  = Alignment(horizontal="left",   vertical="center", indent=1)
 RIGHTV = Alignment(horizontal="right",  vertical="center")
 WRAP   = Alignment(horizontal="left",   vertical="top", wrap_text=True)
 
-NUM   = '#,##0;[Red]"▲"#,##0;"−"'      # 人数（負は▲赤）
-PLUS  = '"+"#,##0;[Red]"▲"#,##0;"±0"'  # 差異・過不足
+NUM   = '#,##0;[Red]"▲"#,##0;0'        # 人数（負は▲赤・ゼロは0）
+PLUS  = '"+"#,##0;[Red]"▲"#,##0;0'     # 差異・過不足（ゼロは0）
 PCT   = '0.0%'
 MEI   = '#,##0.0"名"'
 
@@ -187,7 +188,7 @@ for kind, label, r in ROWS:
         n.number_format = NUM
         n.font = F(10, True, NAVY)
     else:
-        n.value = "−"
+        n.value = "—"
         n.font = F(10, False, GRAY)
 
 # 表の外枠（下辺）
@@ -216,11 +217,12 @@ ws.freeze_panes = "B6"
 # --- 注記 ---
 notes = [
     "【注記】",
-    "1. 数値の単位は「名」。青字セルは実績入力値、黒字セルは計算式による自動算出。マイナスは「▲」で表示。",
+    "1. 数値の単位は「名」。青字セルは実績入力値、黒字セルは計算式による自動算出。マイナスは「▲」（赤字）で表示。",
     "2. 「月初稼働数(b)」は前月の「月末稼働数(c)」を引き継ぐ（2025年9月のみ実績入力）。",
     "3. 「月末稼働数(c)」＝ 月初稼働数(b) ＋ 入 合計 − 出 合計。",
     "4. 「長期欠勤等による離脱者数」は在籍のままラインに入れない人数を指し、退職数には含まない。",
-    "5. 出典：HND MMチーム 人員推移管理表（2025年9月〜2026年8月実績）。",
+    "5. 「年間計」欄の「—」は、月次の累計になじまない項目（在籍数・過不足）であることを示す。",
+    "6. 出典：HND MMチーム 人員推移管理表（2025年9月〜2026年8月実績）。",
 ]
 for i, t in enumerate(notes):
     r = 25 + i
@@ -423,30 +425,84 @@ s.page_margins.left = s.page_margins.right = 0.4
 g = wb.create_sheet("グラフ")
 g.sheet_view.showGridLines = False
 g.column_dimensions["A"].width = 2.5
-g.merge_cells("B2:L2")
+g.column_dimensions["B"].width = 21
+for i in range(3, 15):                                  # C..N の12ヶ月
+    g.column_dimensions[get_column_letter(i)].width = 6.8
+
+g.merge_cells("B2:N2")
 g["B2"] = "HND MMチーム　人員推移グラフ"
 g["B2"].font = F(15, True, NAVY)
 g["B2"].alignment = Alignment(horizontal="left", vertical="center")
 g.row_dimensions[2].height = 30
-g.merge_cells("B3:L3")
+g.merge_cells("B3:N3")
 g["B3"] = "対象期間：2025年9月〜2026年8月　／　採用媒体の活用に関する稟議　添付資料　3/3"
 g["B3"].font = F(9, False, GRAY)
-for col in range(2, 13):
+g["B3"].alignment = Alignment(horizontal="left", vertical="center")
+for col in range(2, 15):
     g.cell(row=4, column=col).border = Border(bottom=Side(style="medium", color=NAVY))
 g.row_dimensions[4].height = 6
 
+
+def data_table(top, heading, rows):
+    """グラフの下に、月別の数値表を出力する。値は「月次推移」シートを参照。"""
+    g.merge_cells(f"B{top}:N{top}")
+    h = g[f"B{top}"]
+    h.value = heading
+    h.font = F(10.5, True, NAVY)
+    h.fill = fill(BAND)
+    h.alignment = LEFTI
+    g.row_dimensions[top].height = 20
+
+    hr = top + 1
+    g[f"B{hr}"] = "項　目"
+    for i, m in enumerate(MONTHS):
+        g.cell(row=hr, column=3 + i, value=m)
+    for col in range(2, 15):
+        c = g.cell(row=hr, column=col)
+        c.font = F(9.5, True, "FFFFFF")
+        c.fill = fill(NAVY_L)
+        c.alignment = CENTER
+        c.border = Border(left=thin, right=thin, top=med, bottom=thin)
+    g.row_dimensions[hr].height = 19
+
+    for j, (label, src_row, fmt, bold) in enumerate(rows):
+        r = hr + 1 + j
+        last = j == len(rows) - 1
+        lab = g[f"B{r}"]
+        lab.value = label
+        lab.font = F(9.5, bold)
+        lab.alignment = LEFTI
+        lab.fill = fill(TOTAL if bold else LABEL)
+        lab.border = Border(left=med, right=thin, top=thin,
+                            bottom=(med if last else thin))
+        for i, mcol in enumerate(COLS):
+            c = g.cell(row=r, column=3 + i)
+            c.value = (f"='月次推移'!{mcol}{src_row}" if isinstance(src_row, int)
+                       else f"={src_row.format(col=mcol)}")
+            c.number_format = fmt
+            c.font = F(9.5, bold)
+            c.alignment = CENTER
+            if bold:
+                c.fill = fill(TOTAL)
+            c.border = Border(left=thin, right=(med if i == 11 else thin),
+                              top=thin, bottom=(med if last else thin))
+        g.row_dimensions[r].height = 18
+    return hr + len(rows) + 1
+
+
 cats = Reference(ws, min_col=2, max_col=13, min_row=5, max_row=5)
 
+# --- グラフ①：必要数と稼働数 ---
 ch1 = LineChart()
 ch1.title = "必要数と稼働数の推移（名）"
 ch1.style = 2
-ch1.height = 8.6
-ch1.width = 21
+ch1.height = 8.4
+ch1.width = 23.5
 ch1.y_axis.title = "人数（名）"
 ch1.y_axis.scaling.min = 0
-for row, color, dash in ((7, "C00000", "dash"), (22, "1F3864", None)):
-    ref = Reference(ws, min_col=1, max_col=13, min_row=row, max_row=row)
-    ch1.add_data(ref, titles_from_data=True, from_rows=True)
+for row in (7, 22):
+    ch1.add_data(Reference(ws, min_col=1, max_col=13, min_row=row, max_row=row),
+                 titles_from_data=True, from_rows=True)
 ch1.set_categories(cats)
 ch1.series[0].graphicalProperties.line.solidFill = "C00000"
 ch1.series[0].graphicalProperties.line.width = 22000
@@ -454,28 +510,69 @@ ch1.series[0].graphicalProperties.line.dashStyle = "dash"
 ch1.series[1].graphicalProperties.line.solidFill = "1F3864"
 ch1.series[1].graphicalProperties.line.width = 28000
 ch1.series[1].smooth = False
+ch1.dataLabels = DataLabelList()
+ch1.dataLabels.showVal = True
+ch1.dataLabels.showSerName = False
+ch1.dataLabels.showCatName = False
+ch1.dataLabels.showLegendKey = False
+ch1.dataLabels.position = "t"
 g.add_chart(ch1, "B6")
 
+next_top = data_table(24, "月別数値：必要数・稼働数", [
+    ("必要数 (a)",       7,  NUM,  False),
+    ("月初稼働数 (b)",   8,  NUM,  False),
+    ("月末稼働数 (c)",  22,  NUM,  True),
+    ("過不足 (c − a)",  23,  PLUS, True),
+])
+
+# --- グラフ②：入と出 ---
 ch2 = BarChart()
 ch2.type = "col"
 ch2.title = "入（増員）と出（減員）の推移（名）"
 ch2.style = 2
-ch2.height = 8.6
-ch2.width = 21
+ch2.height = 8.4
+ch2.width = 23.5
 ch2.y_axis.title = "人数（名）"
 ch2.gapWidth = 60
 for row in (14, 20):
-    ref = Reference(ws, min_col=1, max_col=13, min_row=row, max_row=row)
-    ch2.add_data(ref, titles_from_data=True, from_rows=True)
+    ch2.add_data(Reference(ws, min_col=1, max_col=13, min_row=row, max_row=row),
+                 titles_from_data=True, from_rows=True)
 ch2.set_categories(cats)
 ch2.series[0].graphicalProperties.solidFill = "4472C4"
 ch2.series[1].graphicalProperties.solidFill = "C00000"
-g.add_chart(ch2, "B24")
+ch2.dataLabels = DataLabelList()
+ch2.dataLabels.showVal = True
+ch2.dataLabels.showSerName = False
+ch2.dataLabels.showCatName = False
+ch2.dataLabels.showLegendKey = False
+ch2.dataLabels.position = "outEnd"
+chart2_top = next_top + 2
+g.add_chart(ch2, f"B{chart2_top}")
 
-g.page_setup.orientation = "portrait"
+tbl2_top = chart2_top + 18
+end = data_table(tbl2_top, "月別数値：入（増員）・出（減員）", [
+    ("採用数（正社員）", 11, NUM,  False),
+    ("採用数（派遣）",   12, NUM,  False),
+    ("入 合計",          14, NUM,  True),
+    ("退職数（正社員）", 16, NUM,  False),
+    ("退職数（派遣）",   17, NUM,  False),
+    ("長期欠勤等による離脱", 18, NUM, False),
+    ("出 合計",          20, NUM,  True),
+    ("純増減（入 − 出）", "'月次推移'!{col}14-'月次推移'!{col}20", PLUS, True),
+])
+
+g.merge_cells(f"B{end+1}:N{end+1}")
+g[f"B{end+1}"] = "※ 数値はいずれも「月次推移」シートを参照。単位は名、マイナスは「▲」（赤字）で表示。"
+g[f"B{end+1}"].font = F(9, False, GRAY)
+g[f"B{end+1}"].alignment = LEFTI
+
+g.page_setup.orientation = "landscape"
 g.page_setup.paperSize = g.PAPERSIZE_A4
 g.page_setup.fitToWidth = 1
+g.page_setup.fitToHeight = 0
 g.sheet_properties.pageSetUpPr.fitToPage = True
+g.print_options.horizontalCentered = True
+g.page_margins.left = g.page_margins.right = 0.4
 
 wb.calculation.fullCalcOnLoad = True
 s.sheet_properties.tabColor = NAVY
