@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>委託候補の比較</title>
+<style>
+  @page { size: A4 portrait; margin: 14mm 14mm 12mm; }
+  :root {
+    --ink: #1c2430; --sub: #5a6573; --line: #cfd6de; --soft: #f3f5f8;
+    --accent: #0f5ea8; --accent-soft: #e6f0fa; --warn: #a15c00; --warn-soft: #fdf3e3;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #fff; color: var(--ink);
+    font-family: "IPAPGothic", "IPAGothic", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    font-size: 10pt; line-height: 1.55; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { width: 182mm; margin: 0 auto; }
+  header { border-bottom: 2.5px solid var(--accent); padding-bottom: 5px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: flex-end; }
+  h1 { font-size: 17pt; margin: 0; letter-spacing: .02em; }
+  .meta { font-size: 8.5pt; color: var(--sub); }
+  h2 { font-size: 11.5pt; margin: 14px 0 6px; padding-left: 8px; border-left: 4px solid var(--accent); }
+  .conclusion { background: var(--accent-soft); border: 1px solid #b9d3ee; border-radius: 4px;
+    padding: 9px 12px; display: flex; gap: 14px; align-items: center; }
+  .conclusion .num { flex: none; text-align: center; background: var(--accent); color: #fff;
+    border-radius: 4px; padding: 6px 12px; }
+  .conclusion .num b { display: block; font-size: 20pt; line-height: 1.1; }
+  .conclusion .num span { font-size: 8pt; }
+  .conclusion p { margin: 0; font-size: 10.5pt; }
+  .conclusion strong { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 8.8pt; }
+  th, td { border: 1px solid var(--line); padding: 5px 6px; vertical-align: top; }
+  th { background: var(--soft); font-weight: bold; text-align: left; white-space: nowrap; }
+  td.c, th.c { text-align: center; white-space: nowrap; }
+  tr.best td { background: var(--accent-soft); }
+  tr.best td:first-child { font-weight: bold; color: var(--accent); }
+  .tag { display: inline-block; font-size: 8pt; padding: 0 6px; border-radius: 3px; border: 1px solid; }
+  .tag.good { color: var(--accent); border-color: var(--accent); background: #fff; font-weight: bold; }
+  .tag.mid { color: var(--sub); border-color: var(--line); }
+  .tag.low { color: var(--warn); border-color: #e0b36b; background: var(--warn-soft); }
+  .reasons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .reason { border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; }
+  .reason h3 { margin: 0 0 3px; font-size: 10pt; display: flex; gap: 6px; align-items: baseline; }
+  .reason h3 i { font-style: normal; color: #fff; background: var(--accent); border-radius: 50%;
+    width: 17px; height: 17px; font-size: 8.5pt; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .reason p { margin: 0; font-size: 9pt; color: #333c48; }
+  .check { background: var(--warn-soft); border: 1px solid #ecc98e; border-radius: 4px; padding: 8px 12px; }
+  .check p { margin: 0; font-size: 9.3pt; }
+  .check b { color: var(--warn); }
+  ul.next { margin: 0; padding-left: 1.2em; font-size: 9.3pt; }
+  ul.next li { margin: 2px 0; }
+  footer { margin-top: 10px; font-size: 7.5pt; color: var(--sub); text-align: right; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <h1>業務委託候補の比較 ― RFの委託を最優先に</h1>
+  <div class="meta">2026年9月</div>
+</header>
+
+<div class="conclusion">
+  <div class="num"><b>▲12名</b><span>RF委託による削減効果</span></div>
+  <p><strong>結論：RFの委託を最優先で進める。</strong><br>
+  5つの候補のうち、チームを丸ごと切り出せて、効果が最も大きく、しかも確定しているのはRFだけである。</p>
+</div>
+
+<h2>委託候補の比較</h2>
+<table>
+  <thead>
+    <tr>
+      <th>候補</th><th>現状の問題</th><th>委託による効果</th>
+      <th class="c">保有人員への効果</th><th class="c">切り出し単位</th><th class="c">確度</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="best">
+      <td>RF</td>
+      <td>1チーム1便。時間数確保のため5Jにもアサイン</td>
+      <td>RFチームそのものを切り出せる</td>
+      <td class="c"><b>▲12名</b></td>
+      <td class="c">チーム丸ごと</td>
+      <td class="c"><span class="tag good">確定</span></td>
+    </tr>
+    <tr>
+      <td>アルキア（LY）</td>
+      <td>スケジュール変更で既存便と重複。IZ882は22:15発で別チームが必要</td>
+      <td>独立チームを持つ必要がなくなる</td>
+      <td class="c">▲10名見込み</td>
+      <td class="c">チーム丸ごと</td>
+      <td class="c"><span class="tag mid">見込み</span></td>
+    </tr>
+    <tr>
+      <td>VN317＋日曜LY91/92</td>
+      <td>VN317の切り出しと、日曜18:35発LYのためだけに別チームが必要</td>
+      <td>VN保有を51→45まで圧縮可能</td>
+      <td class="c">▲6名</td>
+      <td class="c">既存チームの一部</td>
+      <td class="c"><span class="tag mid">組合せ次第</span></td>
+    </tr>
+    <tr>
+      <td>VN317のみ</td>
+      <td>VN316/317の一部を切り出し</td>
+      <td>VN保有を51→48</td>
+      <td class="c">▲3名</td>
+      <td class="c">既存チームの一部</td>
+      <td class="c"><span class="tag mid">中</span></td>
+    </tr>
+    <tr>
+      <td>日曜LY91/92のみ</td>
+      <td>日曜だけ15:45発ではなく18:35発のため、ピーク外に別要員が必要</td>
+      <td>日曜の正面39名という突出を解消</td>
+      <td class="c">要精査</td>
+      <td class="c">日曜の別要員</td>
+      <td class="c"><span class="tag low">要精査</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>RFを推す4つの理由</h2>
+<div class="reasons">
+  <div class="reason">
+    <h3><i>1</i>委託の範囲とチームの区切りが一致する</h3>
+    <p>1チーム1便のため、委託すればチームごとなくなる。VN系のように既存チームの一部を切り出して、残った人員を組み直す必要がない。</p>
+  </div>
+  <div class="reason">
+    <h3><i>2</i>削減効果が最大で、数字がぶれない</h3>
+    <p>▲12名は候補の中で最大。アルキアは「見込み」、日曜LYは「要精査」だが、RFはチームがそのまま消えるため確定値として示せる。</p>
+  </div>
+  <div class="reason">
+    <h3><i>3</i>今ある非効率も一緒に解消できる</h3>
+    <p>5Jへのアサインは、RFチームの稼働時間を埋めるための穴埋め。委託すれば、この穴埋め自体が必要なくなる。</p>
+  </div>
+  <div class="reason">
+    <h3><i>4</i>他の案件に左右されずに決められる</h3>
+    <p>アルキアはスケジュール変更とIZ882の扱い次第、VN317はLYとの組み合わせ次第で効果が変わる。RFは単独で判断できる。</p>
+  </div>
+</div>
+
+<h2>事前に確認すべき点</h2>
+<div class="check">
+  <p><b>RFチームが担当している5J分の吸収先。</b>委託後に5Jの作業を他チームが無理なく吸収できれば、▲12名はそのまま成立する。追加の要員が必要な場合は、その分を差し引いた実際の削減数を示す。</p>
+</div>
+
+<h2>他の候補の扱い</h2>
+<ul class="next">
+  <li><b>アルキア（LY）</b>：スケジュール変更とIZ882（22:15発）の扱いが固まった段階で、▲10名見込みを確定値に置き換えて再評価する。</li>
+  <li><b>VN317／日曜LY91/92</b>：単独案と組み合わせ案（▲3名／▲6名）を比べ、日曜LYの効果を精査したうえで判断する。</li>
+</ul>
+
+<footer>保有人員への効果は現行体制との比較。</footer>
+</div>
+</body>
+</html>
