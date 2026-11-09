@@ -19,6 +19,8 @@ from model import INTERVAL, MAXCONSEC, MINWORK, CAP
 OUT = sys.argv[1]
 SOL = pickle.load(open(sys.argv[2], 'rb'))
 SCEN = sys.argv[3]
+OT = len(sys.argv) > 4 and sys.argv[4] == 'OT'
+if OT: v3.CAP = 13 * 60
 SCEN_TXT = {'A': '全便自社（VZ はオーロラ委託のため対象外）', 'B': 'HB・SL を委託（自社は D7・7C・RF・5J。VZ は対象外）', 'S': 'SL を委託（自社は D7・7C・RF・HB・5J。VZ は対象外）', 'H': 'HB を委託（自社は D7・7C・RF・SL・5J。VZ は対象外）'}[SCEN]
 OUTS = {'A': '', 'B': 'HB・SL', 'S': 'SL', 'H': 'HB'}[SCEN]
 LINES = {}
@@ -216,7 +218,7 @@ def maxconsec(sched, ds):
 wb = openpyxl.Workbook()
 ws = wb.active; ws.title = '前提'
 ws['B2'] = f'CTS 26W 線表・シフト・ROSTER（11/16〜3/15 の4期間）　{SCEN_TXT}'; ws['B2'].font = Font(name='Meiryo UI', size=14, bold=True)
-notes = [
+notes = ([' 【現有49名で運営】派遣は追加せず、現有49名で全シフトを担当。足りない分は公休の削減と時間外勤務で対応。1日の拘束は最大13時間（休憩1時間を含む、11時間を超える分は時間外）。穴埋めの FREE ASGN は付けず、実際の作業時間で勤務を組んだ。ROSTER の「公休削減」「所定超過」が1人ずつの負担。'] if OT else []) + [
  '【線表の形】「26W必要数」ファイルの線表（シート1〜7）と同じ配置・表記（PRE → 便 DC/CKIN → GA → PW、R、ARV）。便はキャリアごとにまとめ、CTR OPEN 順。',
  '【配置人数】CTS 作成の線表をもとに、出発便 DC 1・GI 1・CKIN 3（D7 は 6、うち2名は CTR STAY）、7C1504 PSPT CHK 2、到着 ARV 全便3名（OPEN SPOT 対応）。CKIN は STD 60分前に GATE（GA）へ移動。',
  '【準備・後作業】DC は CTR OPEN 60分前から PRE、出発後60分 PW。AGT は最低45分（空きがあれば60分）。D7551 は DC・GI・CKIN 3名が 5:30 出勤、残り CKIN 3名が 6:30 出勤。',
@@ -290,14 +292,14 @@ for k, S in enumerate(SOL):
     # roster
     R = S['R']; codes_ = S['codes']
     rs = wb.create_sheet(f"ROSTER {tag}")
-    rs['B1'] = f"ROSTER {md(a)}〜{md(b)}　必要人数 {S['N']} 名　所定 {S['D']}日・{S['H']}h（連続勤務5日以内・2連休2回以上・インターバル11h）"; rs['B1'].font = M9B
-    hdr = ['要員'] + [f"{d.month}/{d.day}\n{WJ[d.isoweekday()]}" for d in ds] + ['勤務日数', '公休数', '労働時間', '所定との差', '2連休', '最大連続']
+    rs['B1'] = (f"ROSTER {md(a)}〜{md(b)}　現有 {S['N']} 名で運営（公休削減・時間外あり）　所定 {S['D']}日・{S['H']}h　拘束最大{v3.CAP//60}h（連続勤務5日以内・2連休2回以上・インターバル11h）" if OT else f"ROSTER {md(a)}〜{md(b)}　必要人数 {S['N']} 名　所定 {S['D']}日・{S['H']}h（連続勤務5日以内・2連休2回以上・インターバル11h）"); rs['B1'].font = M9B
+    hdr = ['要員'] + [f"{d.month}/{d.day}\n{WJ[d.isoweekday()]}" for d in ds] + (['勤務日数', '公休数', '公休削減', '労働時間', '所定超過(h)', '2連休', '最大連続'] if OT else ['勤務日数', '公休数', '労働時間', '所定との差', '2連休', '最大連続'])
     for j, v in enumerate(hdr):
         x = rs.cell(3, 2 + j, v); x.font = M9B; x.fill = HDRF; x.border = BOX; x.alignment = CEN
     rs.row_dimensions[3].height = 30
     rs.column_dimensions['A'].width = 2; rs.column_dimensions['B'].width = 8
     for j in range(len(ds)): rs.column_dimensions[CL(3 + j)].width = 7
-    for j in range(6): rs.column_dimensions[CL(3 + len(ds) + j)].width = 8
+    for j in range(7): rs.column_dimensions[CL(3 + len(ds) + j)].width = 9
     R = sorted(R, key=lambda p: min((codes_[c][0] for c in p['sched'].values()), default=0))
     for i, p in enumerate(R):
         rr = 4 + i
@@ -311,10 +313,12 @@ for k, S in enumerate(SOL):
             elif codes_[c][0] < 7*60: x.fill = fill('FFDDEBF7')
             elif codes_[c][0] >= 12*60: x.fill = fill('FFFCE4D6')
         hrs = p['mins'] / 60
-        vals = [p['days'], len(ds) - p['days'], round(hrs, 2), round(hrs - S['H'], 2), offpairs(p['sched'], ds), maxconsec(p['sched'], ds)]
+        vals = ([p['days'], len(ds) - p['days'], max(0, p['days'] - S['D']), round(hrs, 2), round(max(0, hrs - S['H']), 2), offpairs(p['sched'], ds), maxconsec(p['sched'], ds)] if OT else [p['days'], len(ds) - p['days'], round(hrs, 2), round(hrs - S['H'], 2), offpairs(p['sched'], ds), maxconsec(p['sched'], ds)])
         for j, v in enumerate(vals):
             x = rs.cell(rr, 3 + len(ds) + j, v); x.font = M9; x.border = BOX; x.alignment = CEN
-        if vals[4] < 2 or vals[5] > MAXCONSEC: rs.cell(rr, 3 + len(ds) + 4).fill = BAD
+        if OT:
+            if vals[2]: rs.cell(rr, 3 + len(ds) + 2).fill = BAD
+            if vals[4] > 0: rs.cell(rr, 3 + len(ds) + 4).fill = BAD
     rr = 4 + len(R)
     x = rs.cell(rr, 2, '出勤数'); x.font = M9B; x.fill = CALC; x.border = BOX
     for j, d in enumerate(ds):
@@ -347,7 +351,7 @@ for k, S in enumerate(SOL):
         for d0, d1 in zip(sd_, sd_[1:]):
             if d1 == d0 + td(1):
                 assert (1440 - codes_[p['sched'][d0]][1]) + codes_[p['sched'][d1]][0] >= INTERVAL
-        assert maxconsec(p['sched'], ds) <= MAXCONSEC and offpairs(p['sched'], ds) >= 2 and p['days'] == S['D'] and p['mins'] <= S['H'] * 60
+        assert maxconsec(p['sched'], ds) <= MAXCONSEC and offpairs(p['sched'], ds) >= 2 and (OT or (p['days'] == S['D'] and p['mins'] <= S['H'] * 60))
     for d in ds:
         assert Counter(c for p in R for c in [p['sched'].get(d)] if c and c != 'FREE') == Counter(s['code'] for s in S['sh'][d])
 need.freeze_panes = 'B5'
