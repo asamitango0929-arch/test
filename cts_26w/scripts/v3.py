@@ -16,15 +16,18 @@ DEP = {
  'SL': dict(win=(-145, 15), prep=50, pw=30, ctr=3),
  '5J': dict(win=(-180, 0), prep=60, pw=40, ctr=3),
 }
-ARR = {'D7': dict(win=(-40, 80), pw=30, n=4), '7C': dict(win=(-30, 60), pw=30, n=2), 'RF': dict(win=(-30, 60), pw=30, n=2),
-       'HB': dict(win=(-40, 70), pw=30, n=2), 'SL': dict(win=(-30, 65), pw=45, n=2), '5J': dict(win=(-30, 60), pw=40, n=2)}
-ARR_N = {'7C1551': 3, 'RF352': 3}          # flights the CTS charts staff with more arrival agents
+ARR = {'D7': dict(win=(-40, 80), pw=30, n=3), '7C': dict(win=(-30, 60), pw=30, n=3), 'RF': dict(win=(-30, 60), pw=30, n=3),
+       'HB': dict(win=(-40, 70), pw=30, n=3), 'SL': dict(win=(-30, 65), pw=45, n=3), '5J': dict(win=(-30, 60), pw=40, n=3)}
+ARR_N = {}   # arrivals: 3 on every flight for OPEN SPOT handling in winter (user rule)          # flights the CTS charts staff with more arrival agents
 PSPT = {'7C1503': 2}                         # 7C1504: PSPT CHK x2, STD-60 .. STD-5
 CODES = {'RF356': ('RF355', 'RF356')}        # CTS charts: RF355 arrives 16:00, RF356 departs 16:55
 PREP_NAME = {'DC': 'DP', 'GI': 'AP', 'CTR': 'CTR準備'}
 # user rule: DC prep 60 before CTR OPEN and post work 60 after departure; departure agents at least 45 (up to 60 when free)
 PREPOST = {'DC': (60, 60), 'GI': (45, 45), 'CTR': (45, 45), 'AGT': (45, 45)}
 AGT_MAX = 60
+EARLIEST = 6*60          # D7 early flight: shifts start 06:00
+GATE_BEFORE = 60          # CTR agents move to the gate 60 min before STD (26W必要数 line charts: CKIN -> GA/GC)
+CTR_STAY = {'D7': 2}      # D7: 2 agents stay at the counter (26W必要数 line charts: CTR STAY)
 
 def codes(k):
     f = FLIGHTS[k]
@@ -39,11 +42,17 @@ def flight_jobs(k):
     for pos, n in (('DC', 1), ('GI', 1), ('CTR', d['ctr'])):
         pre, post = PREPOST[pos]
         for i in range(n):
-            jobs.append(dict(k=k, cr=cr, pos=pos, code=dep, s=a - pre, e=b + post, main=(a, b), prep=(a - pre, a, PREP_NAME[pos]), pw=(b, b + post)))
+            stay = pos == 'CTR' and i < CTR_STAY.get(cr, 0)
+            jobs.append(dict(k=k, cr=cr, pos=pos, code=dep, s=a - pre, e=b + post, main=(a, b), prep=(a - pre, a, PREP_NAME[pos]), pw=(b, b + post),
+                             stay=stay, gate=None if (pos != 'CTR' or stay) else std - GATE_BEFORE))
     pre, post = PREPOST['AGT']
     for i in range(PSPT.get(k, 0)):
         m0, m1 = std - 60, std - 5
         jobs.append(dict(k=k, cr=cr, pos='PSPT CHK', code=dep, s=m0 - pre, e=m1 + post, main=(m0, m1), prep=(m0 - pre, m0, '準備'), pw=(m1, m1 + post)))
+    for j in jobs:   # D7 morning flight: report at 06:00 at the earliest (user rule)
+        if cr == 'D7' and j['s'] < EARLIEST:
+            j['s'] = EARLIEST
+            if j['prep']: j['prep'] = (EARLIEST, j['prep'][1], j['prep'][2])
     r = ARR[cr]; n = ARR_N.get(k, r['n'])
     for i in range(n):
         jobs.append(dict(k=k, cr=cr, pos='ARV', code=arr, s=sta + r['win'][0], e=sta + r['win'][1] + r['pw'], main=(sta + r['win'][0], sta + r['win'][1]), prep=None, pw=(sta + r['win'][1], sta + r['win'][1] + r['pw'])))

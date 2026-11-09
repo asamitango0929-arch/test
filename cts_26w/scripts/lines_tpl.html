@@ -1,0 +1,175 @@
+<title>CTS 26W 線表パターン</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+JP:wght@400;500;700&display=swap">
+<style>
+/* Layout: ops board — header with pattern picker, then a time-scaled line chart (flights on top, staff rows below); tabs for carrier staffing and the period calendar */
+:root{
+  --bg:#f2f4f7; --panel:#ffffff; --fg:#18202c; --muted:#5d6877; --line:#d5dbe3; --grid:#e9edf2; --hour:#c3cad4;
+  --accent:#1f5fb8; --pw:#e4e8ee; --pwfg:#4c5664; --rest:#d93a2b; --chipbg:#e8eef8;
+  --sans:"IBM Plex Sans JP","Hiragino Sans","Yu Gothic",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#10151c;--panel:#171d27;--fg:#e3e8ef;--muted:#98a3b3;--line:#2c3545;--grid:#202836;--hour:#3a4557;--accent:#6ea6ff;--pw:#2a3240;--pwfg:#b7c0cd;--rest:#ff5a4a;--chipbg:#1f2b3d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10151c;--panel:#171d27;--fg:#e3e8ef;--muted:#98a3b3;--line:#2c3545;--grid:#202836;--hour:#3a4557;--accent:#6ea6ff;--pw:#2a3240;--pwfg:#b7c0cd;--rest:#ff5a4a;--chipbg:#1f2b3d;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:13px;line-height:1.5}
+.wrap{max-width:1500px;margin:0 auto;padding-block:18px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px}
+h1{margin:0;font-size:22px;text-wrap:balance} h1 b{font-family:var(--mono);color:var(--accent);margin-right:.35em}
+.sub{margin:2px 0 0;color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--panel);color:var(--fg);padding:6px 12px;border-radius:4px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:600}
+button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;display:grid;gap:10px;min-width:0}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+select{font:inherit;font-size:14px;padding:5px 8px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
+.kpi{display:flex;gap:16px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.kpi span{color:var(--muted);font-size:12px} .kpi b{font-family:var(--mono);font-size:18px;color:var(--fg);margin-left:4px}
+.dates{color:var(--muted);font-size:12px;font-family:var(--mono)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11.5px;color:var(--muted);align-items:center}
+.legend i{display:inline-block;width:22px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:4px}
+.scroll{overflow:auto;border:1px solid var(--line);border-radius:4px;max-height:78vh}
+.chart{position:relative;font-variant-numeric:tabular-nums}
+.axis{position:sticky;top:0;z-index:4;background:var(--panel);height:22px;border-bottom:1px solid var(--line)}
+.axis span{position:absolute;top:3px;font-family:var(--mono);font-size:11px;color:var(--muted);transform:translateX(-50%)}
+.lab{position:sticky;left:0;z-index:3;background:var(--panel);border-right:1px solid var(--line);display:flex;align-items:center;gap:6px;padding:0 8px;white-space:nowrap;overflow:hidden;font-size:11.5px}
+.row{position:relative;display:flex;border-bottom:1px solid var(--grid)}
+.track{position:relative;flex:none}
+.gl{position:absolute;top:0;bottom:0;width:1px;background:var(--grid);pointer-events:none}
+.gl.h{background:var(--hour)}
+.seg{position:absolute;top:3px;bottom:3px;border-radius:2px;font-size:10.5px;line-height:1.15;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;white-space:nowrap;color:#141a22;padding:0 2px;box-sizing:border-box}
+.seg.prep{opacity:.55;border:1px dashed rgba(0,0,0,.35)}
+.seg.main{font-weight:600}
+.seg.gate{font-weight:600;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 4px,transparent 4px 8px)}
+.seg.arv{font-weight:600;border:2px solid rgba(0,0,0,.35)}
+.seg.pw{background:var(--pw);color:var(--pwfg)}
+.seg.rest{background:var(--rest);color:#fff;font-weight:600}
+.sec{position:sticky;left:0;z-index:3;padding:4px 8px;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--line)}
+.code{font-family:var(--mono);font-weight:600}
+.dot{width:10px;height:10px;border-radius:2px;flex:none}
+.small{font-size:11px;color:var(--muted)}
+table{border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--line);padding:5px 8px;text-align:center;white-space:nowrap}
+th{background:var(--chipbg);font-weight:600}
+td.l{text-align:left}
+.tw{overflow-x:auto}
+.pill{display:inline-block;padding:1px 7px;border-radius:3px;font-family:var(--mono);font-size:12px;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.pill:hover{border-color:var(--accent)}
+.pill.cur{background:var(--accent);color:var(--panel);border-color:var(--accent)}
+.notes{display:grid;gap:3px;font-size:12px;color:var(--muted);max-width:110ch}
+.notes b{color:var(--fg)}
+.tip{position:fixed;z-index:20;pointer-events:none;background:var(--fg);color:var(--panel);font-size:12px;padding:4px 8px;border-radius:4px;font-family:var(--mono);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1><b>CTS</b>26W 線表パターン</h1>
+      <p class="sub">運航便の組み合わせごとの線表（P01〜P30）。CTS 線表の配置人数をもとに、拘束11時間（休憩1時間込み）・15分単位で組んだもの</p>
+    </div>
+    <div class="tabs" role="tablist">
+      <button id="t-line" role="tab" aria-selected="true" data-v="line">線表</button>
+      <button id="t-cal" role="tab" aria-selected="false" data-v="cal">期間 × 曜日</button>
+      <button id="t-car" role="tab" aria-selected="false" data-v="car">キャリア別配置</button>
+    </div>
+  </header>
+
+  <section id="v-line">
+    <div class="bar">
+      <label for="pat" class="small">パターン</label>
+      <select id="pat"></select>
+      <div class="kpi"><span>出面<b id="kP"></b>名</span><span>延べ<b id="kH"></b>h</span><span>平均<b id="kA"></b>h/人</span><span>便<b id="kF"></b></span></div>
+    </div>
+    <div class="dates" id="dates"></div>
+    <div class="legend" id="legend"></div>
+    <div class="scroll" id="scroll"><div class="chart" id="chart"></div></div>
+  </section>
+
+  <section id="v-cal" hidden>
+    <div class="small">運航期間（どれかの便が始まる・終わる日で区切った17期間）と曜日ごとに、使う線表パターン。カッコ内は出面数。クリックで線表へ。</div>
+    <div class="tw" id="cal"></div>
+  </section>
+
+  <section id="v-car" hidden>
+    <div class="small">1便あたりの配置人数。GATE は STD 60分前からゲートに入る人数（GI ＋ ゲートへ移る CTR ＋ PSPT CHK）。D7 は CTR のうち2名がカウンターに残る（CTR STAY）。</div>
+    <div class="tw" id="car"></div>
+    <div class="notes">
+      <p><b>DC</b>：CTR OPEN の60分前から準備（DP）、出発後60分の後作業（PW）。D7 朝便は 6:00 出勤のため準備 55分。</p>
+      <p><b>GI・CTR・PSPT CHK</b>：準備・後作業とも最低45分、前後が空いていれば60分まで。CTR は STD 60分前にゲートへ移動（GATE）。</p>
+      <p><b>PSPT CHK（7C1504）</b>：26W必要数ファイルの線表では同じ時間帯に GA 2名（ゲート専任）が付いており、ゲート人数の補強と同じ扱い。</p>
+      <p><b>ARV</b>：冬季 OPEN SPOT 対応で全便3名。</p>
+      <p><b>RF 便名</b>：CTS 線表に合わせ、16:00着 RF355 ／ 16:55発 RF356。</p>
+    </div>
+  </section>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const DATA = /*DATA*/;
+const WJ=['','月','火','水','木','金','土','日'];
+const T0=5*60, T1=21*60, LW=240;
+let PX=1.3;
+const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const md=s=>{const d=new Date(s+'T00:00:00');return (d.getMonth()+1)+'/'+d.getDate()};
+const col=cr=>'#'+DATA.colors[cr].slice(2);
+const sel=document.getElementById('pat');
+DATA.patterns.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`${p.id}（${p.wds.map(w=>WJ[w]).join('')}）${p.days}日 ・ 出面${p.P}名`;sel.appendChild(o)});
+function x(m){return (m-T0)*PX}
+function grid(h){let s='';for(let m=T0;m<=T1;m+=30)s+=`<div class="gl${m%60?'':' h'}" style="left:${x(m)}px"></div>`;return s}
+function seg(a,b,label,kind,cr,title){const w=x(b)-x(a);if(w<=0)return '';
+  const st=kind==='pw'||kind==='rest'?'':`background-color:${col(cr)};`;
+  return `<div class="seg ${kind}" style="left:${x(a)}px;width:${w}px;${st}" data-t="${title||label}">${w>34?label:''}</div>`}
+function render(i){
+  const p=DATA.patterns[i]; sel.value=i;
+  document.getElementById('kP').textContent=p.P; document.getElementById('kH').textContent=p.H;
+  document.getElementById('kA').textContent=(p.H/p.P).toFixed(2); document.getElementById('kF').textContent=p.flights.length;
+  document.getElementById('dates').textContent='適用日：'+p.dates.map(([a,b])=>a===b?md(a):`${md(a)}–${md(b)}(毎週)`).join('、');
+  const W=x(T1), rowH=24;
+  let h=`<div class="row axis" style="width:${LW+W}px"><div class="lab" style="width:${LW}px;background:var(--panel)"></div><div class="track" style="width:${W}px">`;
+  for(let m=T0;m<=T1;m+=60)h+=`<span style="left:${x(m)}px">${hm(m)}</span>`;
+  h+=`</div></div><div class="sec" style="width:${LW+W}px">フライト（キャリアごと・CTR OPEN 順）</div>`;
+  p.flights.forEach(f=>{
+    const n=f.n;
+    h+=`<div class="row" style="height:${rowH}px;width:${LW+W}px"><div class="lab" style="width:${LW}px"><i class="dot" style="background:${col(f.cr)}"></i><span class="code">${f.dep}</span><span class="small">STD ${f.std} ・ CTR ${f.ctr}</span></div><div class="track" style="width:${W}px">${grid()}`
+      +seg(f.depBar[0],f.gateAt,`${f.dep} CTR OPEN ${f.ctr}`,'main',f.cr,`${f.dep} CTR ${f.ctr}〜 / DC${n.dc} GI${n.gi} CTR${n.ctr}`)
+      +seg(f.gateAt,f.depBar[1],`GATE ${n.gate}名`,'gate',f.cr,`${f.dep} GATE ${hm(f.gateAt)}〜STD ${f.std} / ${n.gate}名`)+`</div></div>`;
+    h+=`<div class="row" style="height:${rowH}px;width:${LW+W}px"><div class="lab" style="width:${LW}px"><i class="dot" style="background:${col(f.cr)};opacity:.5"></i><span class="code">${f.arr}</span><span class="small">STA ${f.sta} ・ ARV ${n.arv}名</span></div><div class="track" style="width:${W}px">${grid()}`
+      +seg(f.arrBar[0],f.arrBar[1],`${f.arr} STA ${f.sta}`,'arv',f.cr,`${f.arr} STA ${f.sta} / ARV ${n.arv}名`)+`</div></div>`;
+  });
+  h+=`<div class="sec" style="width:${LW+W}px">要員（${p.P}名 ・ 始業順）</div>`;
+  p.rows.forEach((r,k)=>{
+    h+=`<div class="row" style="height:${rowH}px;width:${LW+W}px"><div class="lab" style="width:${LW}px"><span class="small" style="width:22px;text-align:right">${k+1}</span><span class="code">${r.code}</span><span class="small">${hm(r.s)}–${hm(r.e)} 実働${(r.work/60).toFixed(2)}h</span></div><div class="track" style="width:${W}px">${grid()}`;
+    r.segs.forEach(([a,b,lab,kind,cr])=>{h+=seg(a,b,lab,kind,cr,`${lab}  ${hm(a)}-${hm(b)}`)});
+    h+=`</div></div>`;
+  });
+  document.getElementById('chart').innerHTML=h;
+  try{localStorage.setItem('cts-pat',String(i))}catch(e){}
+}
+// legend
+document.getElementById('legend').innerHTML=Object.keys(DATA.colors).map(c=>`<span><i style="background:${col(c)}"></i>${c} ${DATA.carriers[c]}</span>`).join('')
+ +`<span><i style="background:${col('7C')};opacity:.55;border:1px dashed #555"></i>準備（DP/AP/CTR準備）</span><span><i style="background-color:${col('7C')};background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 4px,transparent 4px 8px)"></i>GATE</span><span><i style="background:${col('7C')};border:2px solid rgba(0,0,0,.35)"></i>ARV</span><span><i style="background:var(--pw)"></i>PW</span><span><i style="background:var(--rest)"></i>REST</span>`;
+sel.onchange=()=>render(+sel.value);
+// calendar
+(function(){
+  const idx=Object.fromEntries(DATA.patterns.map((p,i)=>[p.id,i]));
+  let h='<table><tr><th>#</th><th>運航期間</th><th>日数</th>'+[1,2,3,4,5,6,7].map(w=>`<th>${WJ[w]}</th>`).join('')+'</tr>';
+  DATA.periods.forEach((q,n)=>{h+=`<tr><td>${n+1}</td><td class="l">${md(q.a)}${q.a!==q.b?' – '+md(q.b):''}</td><td>${q.days}</td>`+[1,2,3,4,5,6,7].map(w=>{const id=q.wk[w];if(!id)return '<td></td>';const p=DATA.patterns[idx[id]];return `<td><span class="pill" data-i="${idx[id]}">${id}</span> <span class="small">${p.P}</span></td>`}).join('')+'</tr>'});
+  document.getElementById('cal').innerHTML=h+'</table>';
+  document.getElementById('cal').addEventListener('click',e=>{const t=e.target.closest('[data-i]');if(t){show('line');render(+t.dataset.i);window.scrollTo(0,0)}});
+})();
+// carrier table
+(function(){
+  let h='<table><tr><th>キャリア</th><th>着/発</th><th>STA</th><th>STD</th><th>CTR OPEN</th><th>DC</th><th>GI</th><th>CTR</th><th>うち CTR STAY</th><th>PSPT CHK</th><th>GATE<br><span class="small">STD60分前〜</span></th><th>ARV</th><th>計</th></tr>';
+  DATA.flights.forEach(f=>{const n=f.n;h+=`<tr><td class="l"><i class="dot" style="display:inline-block;background:${col(f.cr)};margin-right:6px"></i>${f.cr} ${DATA.carriers[f.cr]}</td><td class="code">${f.arr}/${f.dep}${f.new?' <span class="small">増便</span>':''}</td><td>${f.sta}</td><td>${f.std}</td><td>${f.ctr}</td><td>${n.dc}</td><td>${n.gi}</td><td>${n.ctr}</td><td>${n.stay||''}</td><td>${n.pspt||''}</td><td><b>${n.gate}</b></td><td>${n.arv}</td><td>${n.dc+n.gi+n.ctr+n.pspt+n.arv}</td></tr>`});
+  document.getElementById('car').innerHTML=h+'</table>';
+})();
+// tabs
+function show(v){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));['line','cal','car'].forEach(k=>document.getElementById('v-'+k).hidden=k!==v)}
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)show(b.dataset.v)});
+// tooltip
+const tip=document.getElementById('tip');
+document.getElementById('chart').addEventListener('mousemove',e=>{const s=e.target.closest('.seg');if(!s){tip.hidden=true;return}tip.textContent=s.dataset.t;tip.hidden=false;tip.style.left=Math.min(e.clientX+12,innerWidth-tip.offsetWidth-8)+'px';tip.style.top=(e.clientY+14)+'px'});
+document.getElementById('chart').addEventListener('mouseleave',()=>tip.hidden=true);
+let start=16; try{const s=localStorage.getItem('cts-pat');if(s!==null&&DATA.patterns[+s])start=+s}catch(e){}
+render(start);
+</script>
