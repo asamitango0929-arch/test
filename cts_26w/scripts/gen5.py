@@ -19,7 +19,9 @@ from model import INTERVAL, MAXCONSEC, MINWORK, CAP
 OUT = sys.argv[1]
 SOL = pickle.load(open(sys.argv[2], 'rb'))
 SCEN = sys.argv[3]
-SCEN_TXT = {'A': 'A案：全便自社（VZ はオーロラ委託のため対象外）', 'B': 'B案：HB・SL を委託（自社は D7・7C・RF・5J。VZ は対象外）'}[SCEN]
+SCEN_TXT = {'A': '全便自社（VZ はオーロラ委託のため対象外）', 'B': 'HB・SL を委託（自社は D7・7C・RF・5J。VZ は対象外）', 'S': 'SL を委託（自社は D7・7C・RF・HB・5J。VZ は対象外）', 'H': 'HB を委託（自社は D7・7C・RF・SL・5J。VZ は対象外）'}[SCEN]
+OUTS = {'A': '', 'B': 'HB・SL', 'S': 'SL', 'H': 'HB'}[SCEN]
+LINES = {}
 WJ = ['', '月', '火', '水', '木', '金', '土', '日']
 NEWF = {k for k, f in FLIGHTS.items() if f.get('new')}
 # colours of the user's line charts (26W必要数 sheets 1-7)
@@ -107,7 +109,7 @@ def line_sheet(wb, name, title, sub, F, shifts, ds, naos):
     ws['C2'] = sub; ws['C2'].font = A8; ws['C2'].alignment = Alignment(vertical='top', wrap_text=True)
     ws.merge_cells(start_row=2, start_column=3, end_row=2, end_column=X0 + 12*12); ws.row_dimensions[2].height = 24
     H = 4
-    for col, v in zip('CDEFGHIJKLMN', ['Terminal', '事業部', 'Carrier', 'Type', 'Wide\nNarrow', 'FLT', 'Frequency', 'Dest', 'STA', 'STD', 'CTR OPEN', 'GATE']):
+    for col, v in zip('CDEFGHIJKLMN', ['Terminal', '事業部', 'Carrier', 'Type', 'Wide\nNarrow', 'FLT', 'Frequency', 'Dest', 'STA', 'STD', 'CTR OPEN', 'BD']):
         x = ws[f'{col}{H}']; x.value = v; x.font = A7B; x.alignment = CEN; x.border = Border(top=tk, bottom=tk)
     hour_header(ws, H); ws.row_dimensions[H].height = 18.75
     FD = dict(FL); r = H + 1
@@ -116,7 +118,7 @@ def line_sheet(wb, name, title, sub, F, shifts, ds, naos):
         dsk = [x for _, _, x in FD[k]]
         freq = 'Daily' if [1,2,3,4,5,6,7] in dsk else ' '.join(map(str, sorted({x for y in dsk for x in y})))
         std = tm(f['std']); o = std + DEP[cr]['win'][0]; c_ = std + DEP[cr]['win'][1]; g = std - v3.GATE_BEFORE
-        vals = ['T1', 'CTS', cr, f['ac'], f['wn'], f"{arr}/{dep}", freq, f['dest'], tval(tm(f['sta'])), tval(std), tval(o), f"{n['gate']}名"]
+        vals = ['T1', 'CTS', cr, f['ac'], f['wn'], f"{arr}/{dep}", freq, f['dest'], tval(tm(f['sta'])), tval(std), tval(o), '']
         for col, v in zip('CDEFGHIJKLMN', vals):
             x = ws[f'{col}{r}']; x.value = v; x.font = A9B if col in 'HKLM' else Font(name='Arial', size=9); x.alignment = CEN; x.border = BOX
             if col in 'KLM': x.number_format = 'h:mm'
@@ -124,8 +126,7 @@ def line_sheet(wb, name, title, sub, F, shifts, ds, naos):
         c0 = m2c(o) - 6
         x = ws.cell(r, c0, tval(tm(f['sta']))); x.font = A6; x.alignment = CEN; x.number_format = 'h:mm'
         ws.merge_cells(start_row=r, start_column=c0, end_row=r, end_column=c0 + 5)
-        bar(ws, r, o, g, f"{arr}\\{dep}\n(CTR OPEN {hc(o)})", UCOL[cr], True)
-        bar(ws, r, g, c_, f"GATE\n{n['gate']}名", UCOL[cr], True)
+        bar(ws, r, o, c_, f"{arr}\\{dep}\n(CTR OPEN {hc(o)})" + ('\nNAOS 7名' if k == v3.NAOS_FLIGHT else ''), UCOL[cr], True)
         x = ws.cell(r, m2c(c_), tval(std)); x.font = A6; x.alignment = CEN; x.number_format = 'h:mm'
         ws.merge_cells(start_row=r, start_column=m2c(c_), end_row=r, end_column=m2c(c_) + 5)
         ws.row_dimensions[r].height = 18; r += 1
@@ -138,41 +139,40 @@ def line_sheet(wb, name, title, sub, F, shifts, ds, naos):
     ws.merge_cells(f'D{SH}:E{SH}'); ws.merge_cells(f'F{SH}:J{SH}')
     hour_header(ws, SH); ws.row_dimensions[SH].height = 17.25
     r = SH + 1; first = r
-    for i, p in enumerate(shifts):
-        ws.cell(r, 2, i + 1).font = A12; ws.cell(r, 2).alignment = CEN
+    rows = sorted([(p, False) for p in shifts] + [(p, True) for p in naos], key=lambda t: (t[0]['start'], t[0]['end'], t[1]))
+    own_no = 0; nao_no = 0
+    for p, isn in rows:
+        fl_ = NAOSF if isn else HDRF
+        if isn:
+            nao_no += 1; x = ws.cell(r, 2, f'N{nao_no}'); x.font = Font(name='Arial', size=9, bold=True, color='FF5B3B8C')
+        else:
+            own_no += 1; x = ws.cell(r, 2, own_no); x.font = A12
+        x.alignment = CEN
         x = ws.cell(r, 3, p['code']); x.font = A9B; x.alignment = CEN; x.border = BOX
-        duty = '/'.join(dict.fromkeys(f"{j['cr']}" for j in p['jobs']))
-        x = ws.cell(r, 4, duty); x.font = Font(name='Arial', size=8); x.alignment = CEN; x.border = BOX
+        if isn: x.fill = NAOSF
+        duty = 'NAOS' if isn else '/'.join(dict.fromkeys(f"{j['cr']}" for j in p['jobs']))
+        x = ws.cell(r, 4, duty); x.font = Font(name='Arial', size=8, bold=isn); x.alignment = CEN; x.border = BOX
+        if isn: x.fill = NAOSF
         ws.merge_cells(start_row=r, start_column=4, end_row=r, end_column=5)
         for c in range(6, 11): ws.cell(r, c).border = BOX
+        if isn:
+            ws.cell(r, 6, 'NAOS派遣（7C増便）').font = Font(name='Arial', size=8); ws.cell(r, 6).alignment = CEN
+            for c in range(6, 11): ws.cell(r, c).fill = NAOSF
         ws.merge_cells(start_row=r, start_column=6, end_row=r, end_column=10)
         for col, m in (('K', p['start']), ('L', p['end']), ('M', p['brk'])):
-            x = ws[f'{col}{r}']; x.value = tval(m); x.number_format = 'h:mm'; x.font = A9B; x.alignment = CEN; x.border = BOX; x.fill = HDRF
-        x = ws[f'N{r}']; x.value = f'=L{r}-K{r}-M{r}'; x.number_format = 'h:mm'; x.font = A9B; x.alignment = CEN; x.border = BOX; x.fill = CALC
-        for s, e, lab, kind, cr in shift_segments(p):
+            x = ws[f'{col}{r}']; x.value = tval(m); x.number_format = 'h:mm'; x.font = A9B; x.alignment = CEN; x.border = BOX; x.fill = fl_
+        x = ws[f'N{r}']; x.value = tval(p['work']); x.number_format = 'h:mm'; x.font = A9B; x.alignment = CEN; x.border = BOX; x.fill = NAOSF if isn else CALC
+        segs = fill_ends(p, segments(dict(p))) if isn else shift_segments(p)
+        for s_, e_, lab, kind, cr in segs:
             t = label(kind, lab)
-            txt = f"{t}\n{h4(s)}-{h4(e)}" if e - s >= 25 else t
-            bar(ws, r, s, e, txt, UCOL[cr] if kind in ('main', 'gate', 'arv') else None, kind in ('main', 'gate', 'arv'))
+            bar(ws, r, s_, e_, f"{t}\n{h4(s_)}-{h4(e_)}" if e_ - s_ >= 25 else t, UCOL[cr] if kind in ('main', 'gate', 'arv') else None, kind in ('main', 'gate', 'arv'))
         ws.row_dimensions[r].height = 17.25; r += 1
     last = r - 1
-    if naos:
-        x = ws.cell(r, 3, f'NAOS 派遣（7C増便 18:30発・{len(naos)}名・拘束4時間）'); x.font = A9B
-        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=10); r += 1
-        for p in naos:
-            x = ws.cell(r, 3, p['code']); x.font = A9B; x.alignment = CEN; x.border = BOX; x.fill = NAOSF
-            x = ws.cell(r, 4, 'NAOS'); x.font = Font(name='Arial', size=8, bold=True); x.alignment = CEN; x.border = BOX; x.fill = NAOSF
-            ws.merge_cells(start_row=r, start_column=4, end_row=r, end_column=5)
-            for c in range(6, 11): ws.cell(r, c).border = BOX
-            for col, m in (('K', p['start']), ('L', p['end']), ('M', 0)):
-                x = ws[f'{col}{r}']; x.value = tval(m); x.number_format = 'h:mm'; x.font = A9B; x.alignment = CEN; x.border = BOX; x.fill = NAOSF
-            x = ws[f'N{r}']; x.value = f'=L{r}-K{r}-M{r}'; x.number_format = 'h:mm'; x.font = A9B; x.alignment = CEN; x.border = BOX; x.fill = NAOSF
-            for s_, e_, lab, kind, cr in fill_ends(p, segments(dict(p))):
-                t = label(kind, lab)
-                bar(ws, r, s_, e_, f"{t}\n{h4(s_)}-{h4(e_)}" if e_ - s_ >= 25 else t, UCOL[cr] if kind in ('main', 'gate', 'arv') else None, kind in ('main', 'gate', 'arv'))
-            ws.row_dimensions[r].height = 17.25; r += 1
-    for lab, fm, fmt in (('AVERAGE', f'=AVERAGE(N{first}:N{last})', 'h:mm'), ('総労働時間', f'=SUM(N{first}:N{last})', '[h]:mm'), ('出面数', len(shifts), None)):
+    tot = sum(p['work'] for p in shifts)
+    for lab, v, fmt in (('AVERAGE（自社）', tot / len(shifts) / 1440, 'h:mm'), ('総労働時間（自社）', tot / 1440, '[h]:mm'), ('出面数', f"自社 {len(shifts)}" + (f" ＋ NAOS {len(naos)}" if naos else ''), None)):
         x = ws.cell(r, 3, lab); x.font = A9B; x.alignment = CEN
-        x = ws.cell(r, 14, fm); x.font = A9B; x.alignment = CEN; x.fill = CALC
+        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=6)
+        x = ws.cell(r, 14, v); x.font = A9B; x.alignment = CEN; x.fill = CALC
         if fmt: x.number_format = fmt
         r += 1
     # shift term counts
@@ -194,7 +194,7 @@ def line_sheet(wb, name, title, sub, F, shifts, ds, naos):
             x = ws[f'{col}{r}']; x.value = v; x.font = Font(name='Arial', size=9); x.alignment = CEN; x.border = BOX; x.fill = NAOSF
             if col in 'DF': x.number_format = 'h:mm'
         r += 1
-    for rr in list(range(H, SH - 1)) + list(range(SH, last + 1 + (len(naos) + 1 if naos else 0))):
+    for rr in list(range(H, SH - 1)) + list(range(SH, last + 1)):
         for h in range(4, 24):
             x = ws.cell(rr, m2c(h*60)); b = x.border
             x.border = Border(left=b.left if b.left and b.left.style else hourln, right=b.right, top=b.top, bottom=b.bottom)
@@ -253,17 +253,18 @@ for k, S in enumerate(SOL):
     for gi, (F, gds) in enumerate(gl):
         wds = sorted({d.isoweekday() for d in gds})
         pidl = f"{gi+1:02d}"
-        nm = f"{tag} {pidl}({''.join(WJ[w] for w in wds)})"
+        nm = gds[0].strftime('%d%b(%a)').upper()
+        LINES.setdefault(tag, []).append(nm)
         dates = ', '.join(md(d) for d in gds)
         shifts = sorted(S['sh'][gds[0]], key=lambda p: (p['start'], p['end']))
         naos = S['naos'][gds[0]]
-        cnt, se = line_sheet(wb, nm, f"CTS 26W 線表  {md(a)}〜{md(b)} 期間  パターン{pidl}（{'・'.join(WJ[w] for w in wds)}）　{SCEN_TXT[:2]}",
-                             f"適用日（{len(gds)}日）: {dates}　　自社 {len(shifts)} 名" + (f"　＋ NAOS {len(naos)} 名" if naos else '') + ('　　HB・SL は委託（本線表に含まず）' if SCEN == 'B' else ''), F, shifts, gds, naos)
+        cnt, se = line_sheet(wb, nm, f"CTS 26W 線表  {nm}  （{md(a)}〜{md(b)} 期間・{'・'.join(WJ[w] for w in wds)}曜パターン）　{SCEN_TXT}",
+                             f"適用日（{len(gds)}日）: {dates}　　自社 {len(shifts)} 名" + (f"　＋ NAOS {len(naos)} 名" if naos else '') + (f'　　{OUTS} は委託（本線表に含まず）' if OUTS else ''), F, shifts, gds, naos)
         cols.append((nm, pidl, wds, gds, cnt, se, len(naos)))
     # 必要人数: shift x day-type
     r = blocks_row
     x = need.cell(r, 2, f"{md(a)}〜{md(b)}　シフト別の必要人数（列 = 線表パターン）"); x.font = M9B; r += 1
-    hdr = ['Shift', '開始', '終了', '実働'] + [f"{c[1]}({''.join(WJ[w] for w in c[2])})\n{len(c[3])}日" for c in cols] + ['期間延べ']
+    hdr = ['Shift', '開始', '終了', '実働'] + [f"{c[0]}\n{''.join(WJ[w] for w in c[2])}・{len(c[3])}日" for c in cols] + ['期間延べ']
     for j, v in enumerate(hdr):
         x = need.cell(r, 2 + j, v); x.font = M9B; x.fill = HDRF; x.border = BOX; x.alignment = CEN
         if j >= 4 and j < 4 + len(cols): x.hyperlink = f"#'{cols[j-4][0]}'!A1"
@@ -321,7 +322,16 @@ for k, S in enumerate(SOL):
     x = rs.cell(rr + 1, 2, 'うち予備'); x.font = M9; x.border = BOX
     for j, d in enumerate(ds):
         x = rs.cell(rr + 1, 3 + j, S['free'][d] or ''); x.font = M9; x.border = BOX; x.alignment = CEN
-    rs.cell(rr + 3, 2, '色: 青=7時前始業、橙=12時以降始業、灰=予備(FREE 9A18A)、緑=公休。').font = Font(name='Meiryo UI', size=8)
+    nn = max(len(S['naos'][d]) for d in ds)
+    for i in range(nn):
+        x = rs.cell(rr + 3 + i, 2, f"NAOS{i+1}"); x.font = Font(name='Arial', size=8, bold=True, color='FF5B3B8C'); x.border = BOX; x.fill = NAOSF; x.alignment = CEN
+        for j, d in enumerate(ds):
+            v = S['naos'][d][i]['code'] if i < len(S['naos'][d]) else ''
+            x = rs.cell(rr + 3 + i, 3 + j, v); x.font = Font(name='Arial', size=8, bold=True); x.border = BOX; x.alignment = CEN
+            if v: x.fill = NAOSF
+    if nn:
+        x = rs.cell(rr + 2, 2, 'NAOS 派遣（7C増便 18:30発・15:15〜19:15・自社人数に含まず）'); x.font = Font(name='Meiryo UI', size=9, bold=True, color='FF5B3B8C')
+    rs.cell(rr + 4 + nn, 2, '色: 青=7時前始業、橙=12時以降始業、灰=予備(FREE 9A18A)、緑=公休、紫=NAOS。').font = Font(name='Meiryo UI', size=8)
     rs.freeze_panes = 'C4'
     # summary row
     hrs = [p['mins'] / 60 for p in R]
@@ -342,10 +352,31 @@ for k, S in enumerate(SOL):
         assert Counter(c for p in R for c in [p['sched'].get(d)] if c and c != 'FREE') == Counter(s['code'] for s in S['sh'][d])
 need.freeze_panes = 'B5'
 # order: 前提, 必要人数, then for each period: ROSTER then line sheets
-order = ['前提', '必要人数']
+ix = wb.create_sheet('期間・パターン一覧')
+ix['B2'] = f'期間・パターン一覧　{SCEN_TXT}'; ix['B2'].font = Font(name='Meiryo UI', size=12, bold=True)
+r = 4
 for S in SOL:
-    tag = f"{S['a'].month}-{S['a'].day}"
-    order += [f"ROSTER {tag}"] + [n for n in wb.sheetnames if n.startswith(tag + ' ')]
+    a, b, ds = S['a'], S['b'], S['ds']; tag = f"{a.month}-{a.day}"
+    x = ix.cell(r, 2, f"{md(a)}〜{md(b)} 期間　自社 {S['N']} 名（ROSTER）"); x.font = M9B; x.hyperlink = f"#'ROSTER {tag}'!A1"; r += 1
+    for j, v in enumerate(['線表シート', '曜日', '日数', '自社出面', 'NAOS', '適用日', '自社で担当する便']):
+        x = ix.cell(r, 2 + j, v); x.font = M9B; x.fill = HDRF; x.border = BOX; x.alignment = CEN
+    r += 1
+    groups = {}
+    for d in ds: groups.setdefault(S['F'][d], []).append(d)
+    for F, gds in sorted(groups.items(), key=lambda x: x[1][0]):
+        nm = gds[0].strftime('%d%b(%a)').upper()
+        wds = sorted({d.isoweekday() for d in gds})
+        vals = [nm, '・'.join(WJ[w] for w in wds), len(gds), len(S['sh'][gds[0]]), len(S['naos'][gds[0]]) or '', ', '.join(md(d) for d in gds),
+                ', '.join(f"{codes(k)[0]}/{codes(k)[1]}" for k in order_flights(F))]
+        for j, v in enumerate(vals):
+            x = ix.cell(r, 2 + j, v); x.font = M9; x.border = BOX; x.alignment = CEN if j < 5 else LEFT
+        ix.cell(r, 2).hyperlink = f"#'{nm}'!A1"; ix.cell(r, 2).font = Font(name='Meiryo UI', size=9, color='FF0563C1', underline='single')
+        ix.row_dimensions[r].height = 30; r += 1
+    r += 1
+for j, w in enumerate([14, 12, 6, 9, 7, 60, 70]): ix.column_dimensions[CL(2 + j)].width = w
+ix.column_dimensions['A'].width = 2
+order = ['前提', '期間・パターン一覧', '必要人数'] + [f"ROSTER {S['a'].month}-{S['a'].day}" for S in SOL]
+for S in SOL: order += LINES[f"{S['a'].month}-{S['a'].day}"]
 wb._sheets = [wb[n] for n in order]
 wb.save(OUT)
 print('saved', len(wb.sheetnames), 'sheets')

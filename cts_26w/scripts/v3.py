@@ -185,3 +185,70 @@ if __name__ == '__main__':
     for a, b, sd, sh in PAY:
         r = solve_period(a, b, sd, sh)
         print(a, b, 'days', len(r['ds']), 'maxd', r['md'], 'maxh', r['mh'], 'P', r['P'], 'H', round(r['H']), 'LB', r['lb'], 'N', r['N'])
+
+# ---------- exact day shifts (CP-SAT): fewest people, then least paid time ----------
+def build_cp(jobs, tlimit=60):
+    from ortools.sat.python import cp_model
+    greedy = build(jobs)
+    K = len(greedy)
+    J = sorted(jobs, key=lambda j: (j['s'], j['e']))
+    n = len(J)
+    m = cp_model.CpModel()
+    x = [[m.NewBoolVar('') for _ in range(K)] for _ in range(n)]
+    used = [m.NewBoolVar('') for _ in range(K)]
+    for i in range(n): m.AddExactlyOne(x[i])
+    for k in range(K - 1): m.Add(used[k] >= used[k+1])
+    # incompatible pairs (overlap or too far apart for one shift)
+    for i in range(n):
+        for i2 in range(i + 1, n):
+            a, b = J[i], J[i2]
+            if a['s'] < b['e'] and b['s'] < a['e'] or q_up(max(a['e'], b['e'])) - q_down(min(a['s'], b['s'])) > CAP:
+                for k in range(K): m.AddBoolOr([x[i][k].Not(), x[i2][k].Not()])
+    spans = []; RS = []
+    for k in range(K):
+        for i in range(n): m.AddImplication(x[i][k], used[k])
+        st = m.NewIntVar(0, 96, ''); en = m.NewIntVar(0, 96, '')   # quarter hours
+        for i in range(n):
+            m.Add(st * 15 <= J[i]['s']).OnlyEnforceIf(x[i][k]); m.Add(en * 15 >= J[i]['e']).OnlyEnforceIf(x[i][k])
+        span = m.NewIntVar(0, CAP, ''); m.Add(span == (en - st) * 15).OnlyEnforceIf(used[k]); m.Add(span == 0).OnlyEnforceIf(used[k].Not())
+        needr = m.NewBoolVar(''); m.Add(span > 360).OnlyEnforceIf(needr); m.Add(span <= 360).OnlyEnforceIf(needr.Not())
+        rs = m.NewIntVar(0, 96*3, '')    # rest start in 5-min units
+        rest = m.NewOptionalIntervalVar(rs * 5, REST, rs * 5 + REST, needr, '')
+        m.Add(rs * 5 >= st * 15).OnlyEnforceIf(needr); m.Add(rs * 5 + REST <= en * 15).OnlyEnforceIf(needr)
+        ivs = [m.NewOptionalIntervalVar(J[i]['s'], J[i]['e'] - J[i]['s'], J[i]['e'], x[i][k], '') for i in range(n)]
+        m.AddNoOverlap(ivs + [rest])
+        # the rest sits between two jobs of the shift (never at its start or end)
+        ybef, yaft = [], []
+        for i in range(n):
+            y = m.NewBoolVar(''); m.AddImplication(y, x[i][k]); m.Add(J[i]['e'] <= rs * 5).OnlyEnforceIf(y); ybef.append(y)
+            z = m.NewBoolVar(''); m.AddImplication(z, x[i][k]); m.Add(J[i]['s'] >= rs * 5 + REST).OnlyEnforceIf(z); yaft.append(z)
+        m.AddBoolOr(ybef).OnlyEnforceIf(needr); m.AddBoolOr(yaft).OnlyEnforceIf(needr)
+        spans.append(span); RS.append((rs, needr))
+    m.Minimize(sum(used) * 10000 + sum(spans))
+    sv = cp_model.CpSolver(); sv.parameters.max_time_in_seconds = tlimit; sv.parameters.num_workers = 4
+    stt = sv.Solve(m)
+    if stt not in (cp_model.OPTIMAL, cp_model.FEASIBLE): return greedy
+    people = []
+    for k in range(K):
+        js = [J[i] for i in range(n) if sv.Value(x[i][k])]
+        if not js: continue
+        js.sort(key=lambda j: j['s'])
+        p = dict(first=js[0]['s'], last=max(j['e'] for j in js), jobs=js, gmax=0)
+        finish_cp(p)
+        if p['brk']:
+            r0 = sv.Value(RS[k][0]) * 5; p['rest'] = (r0, r0 + REST)
+        people.append(p)
+    people.sort(key=lambda p: (p['start'], p['end']))
+    return people if len(people) <= len(greedy) else greedy
+
+def finish_cp(p):
+    p['start'], p['end'] = q_down(p['first']), q_up(p['last'])
+    span = p['end'] - p['start']
+    p['brk'] = REST if span > 360 else 0
+    p['work'] = span - p['brk']; p['code'] = code_of(p['start'], p['end']); p['rest'] = None
+    if p['brk']:
+        # widest free window inside the shift (between jobs, or at the shift edges after rounding)
+        pts = [(p['start'], p['jobs'][0]['s'])] + [(a['e'], b['s']) for a, b in zip(p['jobs'], p['jobs'][1:])] + [(p['last'], p['end'])]
+        mid = [g for g in pts[1:-1] if g[1] - g[0] >= REST]
+        if mid:
+            g = max(mid, key=lambda g: g[1] - g[0]); p['rest'] = (g[0], g[0] + REST)

@@ -1,0 +1,136 @@
+<title>CTS 26W 要員計画</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+JP:wght@400;500;700&display=swap">
+<style>
+/* Layout: decision memo — conclusion first, then the scenario table, the cross-training path, other levers, and how to get there */
+:root{
+  --bg:#f4f5f7; --panel:#ffffff; --fg:#19212c; --muted:#5e6978; --line:#d7dce3; --accent:#1e5aa8;
+  --good:#1f7a4d; --goodbg:#e3f3ea; --bad:#b3261e; --badbg:#fbe5e3; --warnbg:#fff4d6; --chip:#e9eef7;
+  --sans:"IBM Plex Sans JP","Hiragino Sans","Yu Gothic",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#11161d;--panel:#18202a;--fg:#e4e9f0;--muted:#9aa5b4;--line:#2d3746;--accent:#76a9ff;--good:#5fd39a;--goodbg:#173326;--bad:#ff8a80;--badbg:#3a1d1b;--warnbg:#3a3118;--chip:#202c3d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11161d;--panel:#18202a;--fg:#e4e9f0;--muted:#9aa5b4;--line:#2d3746;--accent:#76a9ff;--good:#5fd39a;--goodbg:#173326;--bad:#ff8a80;--badbg:#3a1d1b;--warnbg:#3a3118;--chip:#202c3d;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:14px;line-height:1.65}
+.wrap{max-width:1080px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
+h1{font-size:26px;margin:0;text-wrap:balance} h1 b{font-family:var(--mono);color:var(--accent);margin-right:.3em}
+h2{font-size:18px;margin:0 0 4px;text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0;font-size:13px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;display:grid;gap:12px;min-width:0}
+.lead{border-left:4px solid var(--accent)}
+.lead p{margin:0;max-width:75ch}
+.lead ul{margin:0;padding-left:1.2em;display:grid;gap:4px;max-width:80ch}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums;width:100%}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:center;white-space:nowrap}
+th{background:var(--chip);font-weight:600}
+td.l,th.l{text-align:left}
+.neg{color:var(--bad);font-weight:700;background:var(--badbg)}
+.pos{color:var(--good);font-weight:600;background:var(--goodbg)}
+.mono{font-family:var(--mono)}
+.rec{background:var(--warnbg)}
+.small{font-size:12px;color:var(--muted)}
+ol.steps{margin:0;padding-left:1.3em;display:grid;gap:10px;max-width:85ch}
+ol.steps b{color:var(--fg)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:grid;gap:6px;min-width:0}
+.card h3{margin:0;font-size:15px}
+.card p{margin:0}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:3px;background:var(--chip);color:var(--fg);margin-right:4px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><b>CTS</b>26W 要員計画</h1>
+    <p class="sub">11/16〜3/15 の4期間。現有49名（NAOS 7名は別枠）で回せるか、委託パターンと兼務・派遣の組み合わせで比較</p>
+  </header>
+
+  <section class="lead">
+    <h2>結論</h2>
+    <ul>
+      <li><b>全便自社は不可能。</b>12〜2月は最も効率よく組んでも67〜69名必要で、49名に対し18〜20名不足。</li>
+      <li><b>HB を UTS に委託すると</b>11/16〜12/15 と 2/16〜3/15 は49名で回る。12/16〜2/15 は60名必要で<b>11名不足</b>。</li>
+      <li><b>SL も委託すると</b>12/16〜2/15 は58名で<b>9名不足</b>。HB 委託に比べて減るのは2名だけ。</li>
+      <li>12〜1月の不足は、午後ピーク（14:30〜19:15）の4時間派遣で埋める形が最も小さい。HB 委託なら1日7〜8名、HB・SL 委託なら1日6〜7名。</li>
+      <li>ただしこれは「全員が全キャリアを担当できる」前提の数字。キャリア専任のままだと12〜2月はさらに4〜6名増える。<b>7C・D7・5J の兼務を約10名に持たせる</b>ことが、この数字に近づける条件。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>パターン別の必要人数（自社分）</h2>
+    <p class="small">超効率 = 全員が全キャリア・全ポジションを担当できる前提で ROSTER を作成した人数（連続勤務5日以内・2連休2回以上・インターバル11時間・拘束11時間・最小4時間・所定日数どおり）。資格考慮 = 出発業務（DC・GI・CKIN・GATE）は自分のキャリアのみ、到着（ARV）はキャリアをまたいでよい前提の試算。派遣 = 自社を49名に収めるために、午後ピークの4時間枠で毎日必要な追加人数（超効率の場合）。</p>
+    <div class="tw"><table>
+      <tr><th class="l">パターン</th><th class="l">区分</th><th>11/16〜12/15</th><th>12/16〜1/15</th><th>1/16〜2/15</th><th>2/16〜3/15</th></tr>
+      <tr><td class="l" rowspan="3">① 全便自社</td><td class="l">超効率</td><td>54</td><td>67</td><td>69</td><td>53</td></tr>
+      <tr><td class="l">資格考慮</td><td>54</td><td>72</td><td>72</td><td>55</td></tr>
+      <tr><td class="l">49名との差 ／ 派遣/日</td><td class="neg">−5 ／ 5</td><td class="neg">−18 ／ 13</td><td class="neg">−20 ／ 13</td><td class="neg">−4 ／ 3</td></tr>
+      <tr><td class="l" rowspan="3">② SL 委託</td><td class="l">超効率</td><td>52</td><td>65</td><td>67</td><td>50</td></tr>
+      <tr><td class="l">資格考慮</td><td>54</td><td>71</td><td>71</td><td>52</td></tr>
+      <tr><td class="l">49名との差 ／ 派遣/日</td><td class="neg">−3 ／ 3</td><td class="neg">−16 ／ 12</td><td class="neg">−18 ／ 12</td><td class="neg">−1 ／ 1</td></tr>
+      <tr class="rec"><td class="l" rowspan="3">③ HB 委託</td><td class="l">超効率</td><td>46</td><td>60</td><td>60</td><td>49</td></tr>
+      <tr class="rec"><td class="l">資格考慮</td><td>49</td><td>65</td><td>64</td><td>51</td></tr>
+      <tr class="rec"><td class="l">49名との差 ／ 派遣/日</td><td class="pos">+3 ／ 0</td><td class="neg">−11 ／ 8</td><td class="neg">−11 ／ 7</td><td class="pos">±0 ／ 0</td></tr>
+      <tr><td class="l" rowspan="3">④ SL・HB 委託</td><td class="l">超効率</td><td>44</td><td>58</td><td>58</td><td>45</td></tr>
+      <tr><td class="l">資格考慮</td><td>49</td><td>64</td><td>64</td><td>48</td></tr>
+      <tr><td class="l">49名との差 ／ 派遣/日</td><td class="pos">+5 ／ 0</td><td class="neg">−9 ／ 7</td><td class="neg">−9 ／ 6</td><td class="pos">+4 ／ 0</td></tr>
+    </table></div>
+    <p class="small">VZ はオーロラ委託のため対象外。7C増便（18:30発）は NAOS 7名（15:15〜19:15）が GI・CKIN 3・ARV 3 を担当し、DC（15:00〜19:00）のみ自社。各パターンの線表・シフト別人数・ROSTER は Excel（①〜④）にあります。</p>
+  </section>
+
+  <section>
+    <h2>兼務を持たせる順番（超効率パターンへの道筋）</h2>
+    <p class="small">キャリア専任から始めて、「どのキャリアどうしの出発業務を兼務させると、4期間の延べ必要人数が最も減るか」を1組ずつ選んだ結果。人数は1/16〜2/15 期間で、その兼務を毎日回すのに必要な要員数の目安（1日の兼務シフト数 × 期間日数 ÷ 所定日数）。</p>
+    <div class="grid2">
+      <div class="card"><h3>③ HB 委託（推奨）</h3>
+        <p><span class="tag">1</span><b>7C ↔ D7</b>　延べ −10人月</p>
+        <p class="small">7C・D7 の CKIN/GATE 兼務 約3名、DC 兼務 約2名</p>
+        <p><span class="tag">2</span><b>5J ↔ 7C・D7</b>　延べ −4人月</p>
+        <p class="small">5J・7C の CKIN/GATE 兼務 約6名</p>
+        <p>計 <b>AGT 約9名・DC 約2名</b>で超効率と同じ人数（12〜2月 60名）</p></div>
+      <div class="card"><h3>④ SL・HB 委託</h3>
+        <p><span class="tag">1</span><b>5J ↔ 7C</b>　延べ −9人月</p>
+        <p class="small">5J・7C の CKIN/GATE 兼務 約6名</p>
+        <p><span class="tag">2</span><b>D7 ↔ 5J・7C</b>　延べ −11人月</p>
+        <p class="small">7C・D7 の CKIN/GATE 兼務 約3名、DC 兼務 約2名</p>
+        <p>計 <b>AGT 約9名・DC 約2名</b>で 58名</p></div>
+      <div class="card"><h3>① 全便自社</h3>
+        <p><span class="tag">1</span><b>7C ↔ RF</b>　延べ −9人月</p>
+        <p class="small">CKIN/GATE 兼務 約6名、DC 兼務 約2名</p>
+        <p><span class="tag">2</span><b>D7 ↔ HB</b>　延べ −1人月</p></div>
+      <div class="card"><h3>② SL 委託</h3>
+        <p><span class="tag">1</span><b>7C ↔ D7</b>　延べ −10人月</p>
+        <p><span class="tag">2</span><b>HB ↔ RF</b>　延べ −3人月</p>
+        <p><span class="tag">3</span><b>5J ↔ 7C・D7</b>　延べ −1人月</p></div>
+    </div>
+    <p class="small">なぜ 7C・D7・5J なのか：D7 朝便（5:30〜10:00）と 7C1552（12:10〜）、7C1502（8:30〜11:00）と 5J5129（14:50〜）がちょうど1日の拘束に収まる時間関係にあり、兼務できると1人で2便を担当できる。到着（ARV）は今も CTS 線表でキャリアをまたいで担当しているため、兼務の対象は出発業務（DC・CKIN・GATE）のみ。</p>
+  </section>
+
+  <section>
+    <h2>ほかに試した手</h2>
+    <div class="tw"><table>
+      <tr><th class="l">手</th><th class="l">効果（12〜2月）</th><th class="l">理由</th></tr>
+      <tr><td class="l">休憩を実働8時間以内は45分に</td><td class="l">ほぼなし（±1〜2）</td><td class="l">つなげない原因は休憩より、作業の重なりと拘束11時間</td></tr>
+      <tr><td class="l">休憩を最大3時間まで</td><td class="l">人数は変わらない</td><td class="l">空き時間は今も認めている。休憩扱いにすると労働時間が減るだけ。拘束を11時間より長くできれば効く</td></tr>
+      <tr><td class="l">CTR OPEN を全社 STD 150分前に</td><td class="l">ほぼなし</td><td class="l">午後の重なりは CTR OPEN より便の集中で決まる</td></tr>
+      <tr><td class="l">ピーク日だけ応援</td><td class="l">11/16〜12/15 のみ −3〜5</td><td class="l">12/14・15 など便が全部そろう日に人数が引っ張られている</td></tr>
+      <tr><td class="l">短時間シフト（6時間以内）をパート・派遣に</td><td class="l">正社員 −20〜25</td><td class="l">必要人数の約4割が午後ピークだけの短いシフト。代わりに1日25名前後の短時間要員が必要</td></tr>
+    </table></div>
+    <p class="small">最大の壁は 14:30〜19:00 の午後ピーク（D7553・5J・RF356・7C1504・HB・7C増便が重なる）。正社員は所定日数が決まっているため、短いピーク専用シフトでも1日分を消費してしまう。</p>
+  </section>
+
+  <section>
+    <h2>超効率パターンを実現する方法</h2>
+    <ol class="steps">
+      <li><b>スキルマトリクスを作る。</b>全員について、キャリア別に DC・CKIN/GI・ARV のどれができるかを一覧にする。これがあれば「誰に」まで名前で指定できる（ご提供いただければ組み込みます）。</li>
+      <li><b>兼務の候補者を選ぶ。</b>7C ↔ D7 は、早番（5:30・6:30 出勤）に入っている 7C 担当、または D7 担当で昼まで残れる人から約3名。5J ↔ 7C は、7C 朝便担当で午後まで勤務できる人から約6名。DC 兼務は各キャリアの DC 有資格者から約2名。</li>
+      <li><b>12/16 までに訓練を終える。</b>12/16〜2/15 が最も人が足りない期間。CKIN/GATE は OJT 中心、DC は各キャリアの承認が必要なため最優先で着手。</li>
+      <li><b>ROSTER のルールを決める。</b>兼務者は兼務シフト（例 5C14C：D7551 → 7C1552）を優先して割り当て、専任者は自キャリアのシフトに固定する。</li>
+      <li><b>残りの不足を派遣で埋める。</b>HB 委託なら12〜1月に1日7〜8名、午後4時間（14:30〜19:15 前後）。NAOS の増員か UTS の応援で手配。</li>
+      <li><b>ピーク日を個別に手当てする。</b>12/14・15・20・27 など全便がそろう日は、応援・時間外で吸収すると 11/16〜12/15 の必要人数をさらに3〜5名下げられる。</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>前提</h2>
+    <p class="small">配置人数：出発便 DC 1・GI 1・CKIN 3（D7 は 6、うち2名 CTR STAY）、7C1504 PSPT CHK 2、到着 ARV 全便3名。DC は CTR OPEN 60分前〜出発後60分、AGT は前後最低45分。D7551 は DC・GI・CKIN 3名 5:30、CKIN 3名 6:30 出勤。所定日数・時間は 2026年Ver ①正社員（2027年1/16以降は2026年の同期間の値）。期間をまたぐ連続勤務・インターバルはつないでいない。資格考慮・兼務の数字は、全日程で組んだ試算（ROSTER は超効率パターンで作成）。</p>
+  </section>
+</div>

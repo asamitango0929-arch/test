@@ -2,7 +2,7 @@ import pickle, time, sys
 import model
 from model import *
 SC = sys.argv[1]
-if SC == 'B': model.EXCL |= {'HB382', 'SL392'}
+model.EXCL |= {'A': set(), 'B': {'HB382', 'SL392'}, 'S': {'SL392'}, 'H': {'HB382'}}[SC]
 out = []
 for a, b, D, H in PERIODS:
     N, T = choose(a, b, D, H)
