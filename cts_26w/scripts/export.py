@@ -47,38 +47,42 @@ def ranges(ds):
         if d == b + td(7): b = d
         else: out.append((a, b)); a = b = d
     out.append((a, b)); return out
-pats = {}
-for d in days: pats.setdefault(day_pat[d], []).append(d)
-plist = sorted(pats.items(), key=lambda x: x[1][0])
-pid = {F: f"P{i+1:02d}" for i, (F, _) in enumerate(plist)}
-def counts(k):
-    f = FLIGHTS[k]; cr = f['cr']; n = DEP[cr]['ctr']; st = v3.CTR_STAY.get(cr, 0); ps = PSPT.get(k, 0)
-    return dict(dc=1, gi=1, ctr=n, stay=st, pspt=ps, gate=1 + n - st + ps, arv=ARR_N.get(k, ARR[cr]['n']))
-out = dict(colors=COLOR, carriers=CRNAME, patterns=[], periods=[])
-for F, ds in plist:
-    rows = shifts_for(F)
-    fl = []
-    for k in order_flights(F):
-        f = FLIGHTS[k]; cr = f['cr']; arr, dep = codes(k); std, sta = tm(f['std']), tm(f['sta'])
-        w = DEP[cr]['win']; a = ARR[cr]['win']
-        fl.append(dict(cr=cr, arr=arr, dep=dep, sta=f['sta'], std=f['std'], ac=f['ac'], dest=f['dest'], ctr=hm(std + w[0]),
-                       depBar=[std + w[0], std + w[1]], gateAt=std - v3.GATE_BEFORE, arrBar=[sta + a[0], sta + a[1]], new=k in NEWF, n=counts(k)))
-    out['patterns'].append(dict(id=pid[F], wds=sorted({d.isoweekday() for d in ds}), days=len(ds),
-        dates=[[a.isoformat(), b.isoformat()] for a, b in ranges(ds)], P=len(rows), H=round(sum(r['work'] for r in rows) / 60, 1),
-        flights=fl, rows=[dict(code=r['code'], s=r['start'], e=r['end'], work=r['work'], segs=segments(r)) for r in rows]))
-bps = sorted({D(a) for _, ps in FL for a, b, _ in ps} | {D(b) + td(1) for _, ps in FL for a, b, _ in ps} | {S})
-bps = [d for d in bps if S <= d <= E] + [E + td(1)]
-for a, b in zip(bps[:-1], bps[1:]):
-    b = b - td(1); seg = [a + td(i) for i in range((b - a).days + 1)]
-    wk = {}
-    for w in range(1, 8):
-        dd = [d for d in seg if d.isoweekday() == w]
-        if dd: wk[w] = pid[day_pat[dd[0]]]
-    out['periods'].append(dict(a=a.isoformat(), b=b.isoformat(), days=len(seg), wk=wk))
-fl_all = []
-for k in order_flights(set(FLIGHTS)):
-    f = FLIGHTS[k]; arr, dep = codes(k)
-    fl_all.append(dict(cr=f['cr'], arr=arr, dep=dep, sta=f['sta'], std=f['std'], ctr=hm(ctr_open(k)), new=k in NEWF, n=counts(k)))
-out['flights'] = fl_all
-json.dump(out, open(sys.argv[1], 'w'), ensure_ascii=False, separators=(',', ':'))
-print(len(out['patterns']), sum(len(p['rows']) for p in out['patterns']))
+def main():
+    pats = {}
+    for d in days: pats.setdefault(day_pat[d], []).append(d)
+    plist = sorted(pats.items(), key=lambda x: x[1][0])
+    pid = {F: f"P{i+1:02d}" for i, (F, _) in enumerate(plist)}
+    def counts(k):
+        f = FLIGHTS[k]; cr = f['cr']; n = DEP[cr]['ctr']; st = v3.CTR_STAY.get(cr, 0); ps = PSPT.get(k, 0)
+        return dict(dc=1, gi=1, ctr=n, stay=st, pspt=ps, gate=1 + n - st + ps, arv=ARR_N.get(k, ARR[cr]['n']))
+    out = dict(colors=COLOR, carriers=CRNAME, patterns=[], periods=[])
+    for F, ds in plist:
+        rows = shifts_for(F)
+        fl = []
+        for k in order_flights(F):
+            f = FLIGHTS[k]; cr = f['cr']; arr, dep = codes(k); std, sta = tm(f['std']), tm(f['sta'])
+            w = DEP[cr]['win']; a = ARR[cr]['win']
+            fl.append(dict(cr=cr, arr=arr, dep=dep, sta=f['sta'], std=f['std'], ac=f['ac'], dest=f['dest'], ctr=hm(std + w[0]),
+                           depBar=[std + w[0], std + w[1]], gateAt=std - v3.GATE_BEFORE, arrBar=[sta + a[0], sta + a[1]], new=k in NEWF, n=counts(k)))
+        out['patterns'].append(dict(id=pid[F], wds=sorted({d.isoweekday() for d in ds}), days=len(ds),
+            dates=[[a.isoformat(), b.isoformat()] for a, b in ranges(ds)], P=len(rows), H=round(sum(r['work'] for r in rows) / 60, 1),
+            flights=fl, rows=[dict(code=r['code'], s=r['start'], e=r['end'], work=r['work'], segs=segments(r)) for r in rows]))
+    bps = sorted({D(a) for _, ps in FL for a, b, _ in ps} | {D(b) + td(1) for _, ps in FL for a, b, _ in ps} | {S})
+    bps = [d for d in bps if S <= d <= E] + [E + td(1)]
+    for a, b in zip(bps[:-1], bps[1:]):
+        b = b - td(1); seg = [a + td(i) for i in range((b - a).days + 1)]
+        wk = {}
+        for w in range(1, 8):
+            dd = [d for d in seg if d.isoweekday() == w]
+            if dd: wk[w] = pid[day_pat[dd[0]]]
+        out['periods'].append(dict(a=a.isoformat(), b=b.isoformat(), days=len(seg), wk=wk))
+    fl_all = []
+    for k in order_flights(set(FLIGHTS)):
+        f = FLIGHTS[k]; arr, dep = codes(k)
+        fl_all.append(dict(cr=f['cr'], arr=arr, dep=dep, sta=f['sta'], std=f['std'], ctr=hm(ctr_open(k)), new=k in NEWF, n=counts(k)))
+    out['flights'] = fl_all
+    json.dump(out, open(sys.argv[1], 'w'), ensure_ascii=False, separators=(',', ':'))
+    print(len(out['patterns']), sum(len(p['rows']) for p in out['patterns']))
+
+if __name__ == '__main__':
+    main()

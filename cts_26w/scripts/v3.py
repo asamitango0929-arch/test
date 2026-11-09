@@ -25,7 +25,9 @@ PREP_NAME = {'DC': 'DP', 'GI': 'AP', 'CTR': 'CTR準備'}
 # user rule: DC prep 60 before CTR OPEN and post work 60 after departure; departure agents at least 45 (up to 60 when free)
 PREPOST = {'DC': (60, 60), 'GI': (45, 45), 'CTR': (45, 45), 'AGT': (45, 45)}
 AGT_MAX = 60
-EARLIEST = 6*60          # D7 early flight: shifts start 06:00
+DC_PREP = {'7CXXX': (60, 30)}   # 7C extra flight (NAOS flight): DC 15:00-19:00 (user rule)
+EARLIEST = 6*60
+D7_MORNING = {'D7550': (5*60+30, 6*60+30)}   # report times for D7551 (DC/GI/3 CTR, other 3 CTR)
 GATE_BEFORE = 60          # CTR agents move to the gate 60 min before STD (26W必要数 line charts: CKIN -> GA/GC)
 CTR_STAY = {'D7': 2}      # D7: 2 agents stay at the counter (26W必要数 line charts: CTR STAY)
 
@@ -41,6 +43,7 @@ def flight_jobs(k):
     jobs = []
     for pos, n in (('DC', 1), ('GI', 1), ('CTR', d['ctr'])):
         pre, post = PREPOST[pos]
+        if pos == 'DC' and k in DC_PREP: pre, post = DC_PREP[k]
         for i in range(n):
             stay = pos == 'CTR' and i < CTR_STAY.get(cr, 0)
             jobs.append(dict(k=k, cr=cr, pos=pos, code=dep, s=a - pre, e=b + post, main=(a, b), prep=(a - pre, a, PREP_NAME[pos]), pw=(b, b + post),
@@ -49,10 +52,19 @@ def flight_jobs(k):
     for i in range(PSPT.get(k, 0)):
         m0, m1 = std - 60, std - 5
         jobs.append(dict(k=k, cr=cr, pos='PSPT CHK', code=dep, s=m0 - pre, e=m1 + post, main=(m0, m1), prep=(m0 - pre, m0, '準備'), pw=(m1, m1 + post)))
-    for j in jobs:   # D7 morning flight: report at 06:00 at the earliest (user rule)
-        if cr == 'D7' and j['s'] < EARLIEST:
-            j['s'] = EARLIEST
-            if j['prep']: j['prep'] = (EARLIEST, j['prep'][1], j['prep'][2])
+    if k in D7_MORNING:   # D7551: DC, GI and 3 counter agents report 05:30, the other 3 counter agents 06:30 (user rule)
+        ci = 0
+        for j in jobs:
+            if j['pos'] == 'CTR':
+                t = D7_MORNING[k][1] if ci >= 3 else D7_MORNING[k][0]; ci += 1
+            elif j['pos'] in ('DC', 'GI'): t = D7_MORNING[k][0]
+            else: continue
+            j['s'] = t; j['prep'] = (t, j['prep'][1], j['prep'][2])
+    else:
+        for j in jobs:   # other D7 flights: never before 06:00
+            if cr == 'D7' and j['s'] < EARLIEST:
+                j['s'] = EARLIEST
+                if j['prep']: j['prep'] = (EARLIEST, j['prep'][1], j['prep'][2])
     r = ARR[cr]; n = ARR_N.get(k, r['n'])
     for i in range(n):
         jobs.append(dict(k=k, cr=cr, pos='ARV', code=arr, s=sta + r['win'][0], e=sta + r['win'][1] + r['pw'], main=(sta + r['win'][0], sta + r['win'][1]), prep=None, pw=(sta + r['win'][1], sta + r['win'][1] + r['pw'])))
@@ -109,11 +121,22 @@ def build(jobs, tries=80):
 
 days = [S + td(i) for i in range((E - S).days + 1)]
 day_pat = {d: frozenset(ops(d)) for d in days}
+# 7C extra flight (18:30 dep): NAOS sends 7 people daily, 15:15-19:15 (4h) -> GI, CKIN x3, ARV x3
+NAOS_FLIGHT, NAOS_POS, NAOS_SHIFT = '7CXXX', ('GI', 'CTR', 'ARV'), (15*60+15, 19*60+15)
+def is_naos(j): return j['k'] == NAOS_FLIGHT and j['pos'] in NAOS_POS
 _cache = {}
 def shifts_for(F):
     if F not in _cache:
-        _cache[F] = build([j for k in F for j in flight_jobs(k)])
+        _cache[F] = build([j for k in F for j in flight_jobs(k) if not is_naos(j)])
     return _cache[F]
+def naos_for(F):
+    if NAOS_FLIGHT not in F: return []
+    a, b = NAOS_SHIFT; out = []
+    for j in flight_jobs(NAOS_FLIGHT):
+        if is_naos(j):
+            assert a <= j['s'] and j['e'] <= b, j
+            out.append(dict(first=j['s'], last=j['e'], jobs=[j], start=a, end=b, brk=0, work=b - a, rest=None, code=code_of(a, b), naos=True))
+    return out
 
 PAY = [(date(2026,10,16), date(2026,11,15), 21, 168), (date(2026,11,16), date(2026,12,15), 20, 160),
        (date(2026,12,16), date(2027,1,15), 22, 176), (date(2027,1,16), date(2027,2,15), 21, 168),
