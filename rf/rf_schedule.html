@@ -1,0 +1,100 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>RF運航スケジュール</title>
+<style>
+@page{size:A4 landscape;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"IPAPGothic","IPAGothic",sans-serif;color:#1f2933;width:297mm;height:210mm;background:#fff}
+.page{width:297mm;height:210mm;padding:9mm 11mm;display:flex;flex-direction:column;gap:4mm}
+header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #1e3a5f;padding-bottom:2.5mm}
+h1{font-size:21pt;color:#1e3a5f;letter-spacing:.5px}
+.sub{font-size:9.5pt;color:#52606d;text-align:right;line-height:1.5}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm}
+.kpi{border-radius:2mm;padding:2.5mm 4mm;border-left:5px solid}
+.kpi b{display:block;font-size:13pt;margin-bottom:.8mm}
+.kpi span{font-size:9pt;color:#3e4c59}
+.ok{background:#eaf6ee;border-color:#2f9e5b}.ok b{color:#1d7a43}
+.chg{background:#fff4e5;border-color:#e8890c}.chg b{color:#b8650a}
+.ng{background:#fdecec;border-color:#d64545}.ng b{color:#b03030}
+.main{display:grid;grid-template-columns:1.25fr 1fr;gap:5mm}
+h2{font-size:11pt;color:#fff;background:#1e3a5f;padding:1.2mm 3mm;border-radius:1mm;margin-bottom:1.8mm}
+table{width:100%;border-collapse:collapse;font-size:8.6pt}
+th{background:#e4e9f0;color:#1e3a5f;padding:1.3mm 1.5mm;text-align:left;border-bottom:1.5px solid #9aa5b1}
+td{padding:1.3mm 1.5mm;border-bottom:1px solid #d9dee5;vertical-align:middle}
+.tag{display:inline-block;padding:.4mm 2mm;border-radius:3mm;font-size:8pt;font-weight:bold;color:#fff;white-space:nowrap}
+.t-ok{background:#2f9e5b}.t-chg{background:#e8890c}.t-ng{background:#d64545}
+.blk{margin-bottom:3mm}
+.chgbox{border:1.5px solid #e8890c;border-radius:2mm;padding:2.5mm 3mm;margin-bottom:2.5mm;font-size:9pt;line-height:1.55}
+.chgbox.ng{border-color:#d64545;background:#fff}
+.chgbox h3{font-size:10pt;margin-bottom:1mm}
+.chgbox.chg h3{color:#b8650a}.chgbox.ng h3{color:#b03030}
+.chgbox{background:#fff}
+.note{font-size:8.6pt;line-height:1.55;background:#f3f5f8;border-radius:2mm;padding:2.2mm 3mm}
+.note li{margin-left:4mm}
+.gantt{font-size:8pt}
+.grow{display:grid;grid-template-columns:40mm 1fr;align-items:center;height:7.5mm}
+.track{position:relative;height:100%;border-left:1px solid #9aa5b1}
+.bar{position:absolute;top:1.5mm;height:4.5mm;border-radius:1mm;font-size:7.2pt;color:#fff;padding-left:1.2mm;line-height:4.5mm;white-space:nowrap;overflow:visible}
+.b-ok{background:#2f9e5b}.b-chg{background:#e8890c}
+.b-ghost{background:repeating-linear-gradient(45deg,#f6c9c9 0 2px,#fff 2px 4px);border:1px dashed #d64545;color:#b03030}
+.b-tbd{background:repeating-linear-gradient(45deg,#e4e7eb 0 3px,#fff 3px 6px);border:1px dashed #7b8794;color:#52606d}
+.months{display:grid;grid-template-columns:40mm 1fr;font-weight:bold;color:#1e3a5f}
+.mtrack{position:relative;height:4mm}
+.mtrack span{position:absolute;top:0}
+.vline{position:absolute;top:0;bottom:0;border-left:1px dotted #9aa5b1}
+.legend{font-size:7.6pt;color:#52606d;margin-top:1mm;display:flex;gap:4mm}
+.legend i{display:inline-block;width:5mm;height:2.6mm;vertical-align:middle;margin-right:1mm;border-radius:.6mm}
+footer{margin-top:auto;font-size:7.6pt;color:#7b8794;display:flex;justify-content:space-between}
+</style></head><body><div class="page">
+<header><h1>RF 運航スケジュール 最新状況</h1>
+<div class="sub">出典：結城さん最新情報<br>作成：2026年11月18日時点</div></header>
+
+<div class="kpis">
+<div class="kpi ok"><b>既存Daily便 2本：確定</b><span>RF352/351 運航中／RF356/355 は 11/27 開始</span></div>
+<div class="kpi chg"><b>増便の変更 2件</b><span>午前 火・木・日 → 12/22 開始に後ろ倒し／午前 土曜 → 見送り（未定）</span></div>
+<div class="kpi ok"><b>増便 2件：当初どおり確定</b><span>午前 火曜（1/26～2/23）／夕方 火・木・日（12/20～12/31）</span></div>
+</div>
+
+<div class="main">
+<div>
+<div class="blk"><h2>① 既存便（Daily運航）</h2>
+<table><tr><th>便名（到着／出発）</th><th>STA</th><th>STD</th><th>運航期間</th><th>状況</th></tr>
+<tr><td><b>RF352/351</b></td><td>10:30</td><td>11:30</td><td>2026/10/26 ～ 2027/3/27</td><td><span class="tag t-ok">確定</span></td></tr>
+<tr><td><b>RF356/355</b></td><td>16:00</td><td>16:55</td><td>2026/11/27 ～ 2027/3/2</td><td><span class="tag t-ok">確定</span></td></tr>
+</table></div>
+<div class="blk"><h2>② 増便分（臨時便）</h2>
+<table><tr><th>便名</th><th>STA / STD</th><th>曜日</th><th>当初予定</th><th>最新予定</th><th>状況</th></tr>
+<tr><td><b>RF3503/3493</b></td><td>09:10 / 10:00</td><td>火・木・日</td><td>12/13～1/19</td><td><b>12/22～1/19</b></td><td><span class="tag t-chg">変更・確定</span></td></tr>
+<tr><td><b>RF3503/3493</b></td><td>09:15 / 10:15</td><td>土</td><td>12/26～2/27</td><td><b>未定</b></td><td><span class="tag t-ng">見送り</span></td></tr>
+<tr><td><b>RF3503/3493</b></td><td>09:10 / 10:00</td><td>火</td><td>1/26～2/23</td><td>変更なし</td><td><span class="tag t-ok">確定</span></td></tr>
+<tr><td><b>RF3603/3593</b></td><td>18:30 / 19:30</td><td>火・木・日</td><td>12/20～12/31</td><td>変更なし</td><td><span class="tag t-ok">確定</span></td></tr>
+</table></div>
+</div>
+<div>
+<h2>③ 変更点</h2>
+<div class="chgbox chg"><h3>▲ 午前増便（火・木・日）：開始を9日後ろ倒し</h3>
+開始日 12/13（日）→ <b>12/22（火）</b>。終了日 1/19（火）は変更なし。<br>
+取りやめ：12/13（日）・12/15（火）・12/17（木）・12/20（日）の<b>4日</b></div>
+<div class="chgbox ng"><h3>✕ 午前増便（土曜）：運航開始を見送り</h3>
+当初 12/26～2/27 の予定。<b>新たな開始日は未定</b>（続報待ち）</div>
+<div class="note"><b>確認ポイント</b><ul>
+<li>12/20（日）は<b>夕方増便のみ</b>運航（午前増便はなし）</li>
+<li>午前の火曜増便は 1/19 → 1/26 と続き、2/23 まで毎週途切れない</li>
+<li>土曜便は時刻が他と異なる（09:15/10:15）。確定次第、表を更新</li>
+</ul></div>
+</div>
+</div>
+
+<div class="gantt"><h2>増便 運航期間（2026年12月～2027年2月）</h2>
+<div class="months"><div></div><div class="mtrack"><span style="left:0">12月</span><span style="left:34.44%">1月</span><span style="left:68.89%">2月</span></div></div>
+<div class="grow"><div>午前 火・木・日（09:10）</div><div class="track"><div class="vline" style="left:34.44%"></div><div class="vline" style="left:68.89%"></div>
+<div class="bar b-ghost" style="left:13.33%;width:10%">取りやめ</div><div class="bar b-chg" style="left:23.33%;width:32.22%">12/22～1/19</div></div></div>
+<div class="grow"><div>午前 土（09:15）</div><div class="track"><div class="vline" style="left:34.44%"></div><div class="vline" style="left:68.89%"></div>
+<div class="bar b-tbd" style="left:27.78%;width:71.11%">見送り・開始日未定（当初 12/26～2/27）</div></div></div>
+<div class="grow"><div>午前 火（09:10）</div><div class="track"><div class="vline" style="left:34.44%"></div><div class="vline" style="left:68.89%"></div>
+<div class="bar b-ok" style="left:62.22%;width:32.22%">1/26～2/23</div></div></div>
+<div class="grow"><div>夕方 火・木・日（18:30）</div><div class="track"><div class="vline" style="left:34.44%"></div><div class="vline" style="left:68.89%"></div>
+<div class="bar b-ok" style="left:21.11%;width:13.33%">12/20～12/31</div></div></div>
+<div class="legend"><span><i class="b-ok" style="background:#2f9e5b"></i>確定</span><span><i style="background:#e8890c"></i>変更後・確定</span><span><i class="b-ghost"></i>取りやめ</span><span><i class="b-tbd"></i>未定</span></div>
+</div>
+
+<footer><span>曜日表記：D2＝火／D4＝木／D6＝土／D7＝日（各期間の開始・終了日の曜日は確認済み）</span><span>RF 運航スケジュール</span></footer>
+</div></body></html>
